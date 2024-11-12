@@ -40,6 +40,8 @@ type
   { TAPIConfigTests }
 
   TAPIConfigTests = class(THTTPTestCase)
+  private
+
   published
     procedure ConfigOneContext;
 
@@ -54,9 +56,14 @@ type
     // context
     procedure StopContext;
     procedure StopStartContext;
+    procedure TestWebAppContextMemoryLeaks;
+    procedure TestWebAppContextMemoryLeaksWithWebComponent;
 
     //
     procedure ConfigAbsolutePath;
+
+    // init method
+    procedure TestInitCanReadWebComponentContext;
 
     // exceptions
     procedure TestExceptionInInitStopsComponent;
@@ -71,7 +78,6 @@ type
 
     // web component tests
     procedure TestNoMethodReturns405;
-
     procedure TestPOSTMethodResponse;
 
     // Web Component init parameter
@@ -92,15 +98,30 @@ type
     procedure TestAddConnector;
     procedure TestThreadPool;
 
-    procedure TestWrapper;
-    procedure TestWrapperWithContexts;
-    procedure TestWrapperWithContextsSimple;
-
     procedure TestBindErrorRaisesException;
 
     // test overriding the TdjWebComponent.OnGetLastModified method
     // (since 1.2.10)
     procedure TestCachedGetRequest;
+
+    procedure TestOnlyAFilter;
+    procedure TestFilter;
+    procedure TestTwoFilters;
+    procedure TestTwoFiltersReversed;
+    procedure TestTwoFiltersAndTwoWebComponents;
+    procedure TestFilterWithInit;
+    procedure TestFilterInitCanReadContextConfiguration;
+    //procedure TestOneFilterAndTwoWebComponents;
+
+    procedure TestMapFilterTwiceToSameWebComponentRaisesException;
+    //procedure TestMapFilterWithUnknownComponentNameRaisesException;
+    //procedure TestWebFilterHolderInit;
+    //procedure TestWebFilterHolderInitHavingTwoInstances;
+    procedure TestCatchAllWebFilter;
+    procedure TestExceptionInComponentInitWithWebFilter;
+    procedure TestExceptionInComponentServiceWithWebFilter;
+    procedure TestExceptionInComponentOnGetWithWebFilter;
+    procedure TestWebFilterDestroyFilter;
 
   end;
 
@@ -108,11 +129,14 @@ implementation
 
 uses
   djWebAppContext, djInterfaces, djWebComponent, djWebComponentHolder,
-  djWebComponentContextHandler, djServer, djDefaultHandler, djStatisticsHandler,
+  djWebComponentContextHandler, djServer, djDefaultHandler,
   djHTTPConnector, djContextHandlerCollection, djHandlerList, djTypes,
-  djAbstractHandler, djServerContext,
+  djAbstractHandler, djServerContext, djWebFilter, djWebFilterHolder,
+  djWebFilterConfig,
+  {$IFDEF FPC}{$NOTES OFF}{$ENDIF}{$HINTS OFF}{$WARNINGS OFF}
   IdServerInterceptLogFile, IdSchedulerOfThreadPool, IdGlobal, IdException,
   IdResourceStrings,
+  {$IFDEF FPC}{$ELSE}{$HINTS ON}{$WARNINGS ON}{$ENDIF}
   SysUtils, Classes;
 
 type
@@ -125,7 +149,7 @@ type
 type
   TExamplePage = class(TdjWebComponent)
   public
-    procedure OnGet(Request: TdjRequest; Response: TdjResponse); override;
+    procedure OnGet({%H-}Request: TdjRequest; Response: TdjResponse); override;
   end;
 
 { TExamplePage }
@@ -133,6 +157,23 @@ type
 procedure TExamplePage.OnGet(Request: TdjRequest; Response: TdjResponse);
 begin
   Response.ContentText := 'example';
+end;
+
+procedure TAPIConfigTests.TestWebAppContextMemoryLeaks;
+var
+  Context: TdjWebAppContext;
+begin
+  Context := TdjWebAppContext.Create('web');
+  Context.Free;
+end;
+
+procedure TAPIConfigTests.TestWebAppContextMemoryLeaksWithWebComponent;
+var
+  Context: TdjWebAppContext;
+begin
+  Context := TdjWebAppContext.Create('web');
+  Context.AddWebComponent(TExamplePage, '/example');
+  Context.Free;
 end;
 
 procedure TAPIConfigTests.ConfigAbsolutePath;
@@ -192,7 +233,7 @@ begin
   try
     // create the 'test' context
     Context := TdjWebAppContext.Create('test');
-    Context.Add(TExamplePage, '/example');
+    Context.AddWebComponent(TExamplePage, '/example');
     Server.Add(Context);
     // add a handlerlist with a TdjDefaultHandler
     DefaultHandler := TdjDefaultHandler.Create;
@@ -216,10 +257,10 @@ begin
   Server := TdjServer.Create;
   try
     Context := TdjWebAppContext.Create('foo');
-    Context.Add(TExamplePage, '/bar');
+    Context.AddWebComponent(TExamplePage, '/bar');
     Server.Add(Context);
     Context := TdjWebAppContext.Create('foo');
-    Context.Add(TExamplePage, '/bar2');
+    Context.AddWebComponent(TExamplePage, '/bar2');
     Server.Add(Context);
     Server.Start;
 
@@ -236,10 +277,11 @@ var
   Server: TdjServer;
   Context: TdjWebAppContext;
 begin
+  Context := TdjWebAppContext.Create('foo');
+  Context.AddWebComponent(TExamplePage, '/bar');
+
   Server := TdjServer.Create;
   try
-    Context := TdjWebAppContext.Create('foo');
-    Context.Add(TExamplePage, '/bar');
     Server.Add(Context);
     Server.Start;
 
@@ -259,7 +301,7 @@ begin
   Server := TdjServer.Create;
   try
     Context := TdjWebAppContext.Create('foo');
-    Context.Add(TExamplePage, '/bar');
+    Context.AddWebComponent(TExamplePage, '/bar');
     Server.Add(Context);
     Server.Start;
 
@@ -279,12 +321,56 @@ begin
   try
     Server.AddConnector('::1');
     Context := TdjWebAppContext.Create('example');
-    Context.Add(TExamplePage, '/index.html');
+    Context.AddWebComponent(TExamplePage, '/index.html');
     Server.Add(Context);
     Server.Start;
 
-    CheckGETResponseEquals('example', 'http://[::1]/example/index.html');
+    CheckGETResponseEquals('example', 'http://[::1]:8080/example/index.html');
 
+  finally
+    Server.Free;
+  end;
+end;
+
+// TCmpWithInit -----------------------------------------------------
+type
+  TCmpWithInit = class(TdjWebComponent)
+  private
+    StaticContent: string;
+  public
+    procedure Init(const Config: IWebComponentConfig); override;
+    procedure OnGet(Request: TdjRequest; Response: TdjResponse); override;
+  end;
+
+procedure TCmpWithInit.Init(const Config: IWebComponentConfig);
+begin
+  inherited Init(Config);
+
+  StaticContent := 'from init';
+
+  if Config <> nil then StaticContent := StaticContent + ' 1';
+  if Config.GetContext <> nil then StaticContent := StaticContent + ' 2';
+  if Config.GetContext.GetContextConfig <> nil then StaticContent := StaticContent + ' 3';
+
+end;
+
+procedure TCmpWithInit.OnGet(Request: TdjRequest; Response: TdjResponse);
+begin
+  Response.ContentText := StaticContent;
+end;
+
+procedure TAPIConfigTests.TestInitCanReadWebComponentContext;
+var
+  Context: TdjWebAppContext;
+  Server: TdjServer;
+begin
+  Context := TdjWebAppContext.Create('');
+  Context.AddWebComponent(TCmpWithInit, '/');
+  Server := TdjServer.Create;
+  try
+    Server.Add(Context);
+    Server.Start;
+    CheckGETResponseEquals('from init 1 2 3', '/');
   finally
     Server.Free;
   end;
@@ -294,7 +380,7 @@ end;
 type
   TCmpReturnsInitParams = class(TdjWebComponent)
   public
-    procedure OnGet(Request: TdjRequest; Response: TdjResponse); override;
+    procedure OnGet({%H-}Request: TdjRequest; Response: TdjResponse); override;
   end;
 
 procedure TCmpReturnsInitParams.OnGet(Request: TdjRequest; Response: TdjResponse);
@@ -329,8 +415,8 @@ end;
 type
   THelloHandler = class(TdjAbstractHandler)
   public
-    procedure Handle(const Target: string; Context: TdjServerContext;
-      Request: TdjRequest; Response: TdjResponse); override;
+    procedure Handle(const {%H-}Target: string; {%H-}Context: TdjServerContext;
+      {%H-}Request: TdjRequest; Response: TdjResponse); override;
   end;
 
 { THelloHandler }
@@ -342,6 +428,7 @@ begin
   Response.ResponseNo := 200;
 end;
 
+(*
 procedure TAPIConfigTests.TestWrapper;
 var
   Server: TdjServer;
@@ -394,11 +481,11 @@ begin
       // /web1/example1.html
       ContextHandler := TdjWebComponentContextHandler.Create('web1');
       ContextHandlers.AddHandler(ContextHandler);
-      ContextHandler.Add(TExamplePage, '/example1.html');
+      ContextHandler.AddWebComponent(TExamplePage, '/example1.html');
       // /web2/example2.html
       ContextHandler := TdjWebComponentContextHandler.Create('web2');
       ContextHandlers.AddHandler(ContextHandler);
-      ContextHandler.Add(TExamplePage, '/example2.html');
+      ContextHandler.AddWebComponent(TExamplePage, '/example2.html');
       Server.Start;
 
       // Test the component
@@ -431,12 +518,12 @@ begin
 
       // /web1/example1.html
       Context := TdjWebAppContext.Create('web1');
-      Context.Add(TExamplePage, '/example1.html');
+      Context.AddWebComponent(TExamplePage, '/example1.html');
       Server.Add(Context);
 
       // /web2/example2.html
       Context := TdjWebAppContext.Create('web2');
-      Context.Add(TExamplePage, '/example2.html');
+      Context.AddWebComponent(TExamplePage, '/example2.html');
       Server.Add(Context);
 
       Server.Start;
@@ -456,6 +543,7 @@ begin
     Server.Free;
   end;
 end;
+*)
 
 type
   TNoMethodComponent = class(TdjWebComponent)
@@ -535,8 +623,8 @@ end;
 type
   TExceptionComponent = class(TdjWebComponent)
   public
-    procedure Service(Context: TdjServerContext; Request: TdjRequest;
-      Response: TdjResponse); override;
+    procedure Service({%H-}Context: TdjServerContext; {%H-}Request: TdjRequest;
+      {%H-}Response: TdjResponse); override;
   end;
 
 { TExceptionComponent }
@@ -572,7 +660,7 @@ end;
 type
   TGetComponent = class(TdjWebComponent)
   public
-    procedure OnGet(Request: TdjRequest; Response: TdjResponse);  override;
+    procedure OnGet({%H-}Request: TdjRequest; Response: TdjResponse);  override;
   end;
 
 { TGetComponent }
@@ -586,8 +674,8 @@ end;
 type
   TCachedGetComponent = class(TdjWebComponent)
   public
-    procedure OnGet(Request: TdjRequest; Response: TdjResponse);  override;
-    function OnGetLastModified(Request: TdjRequest): TDateTime; override;
+    procedure OnGet({%H-}Request: TdjRequest; Response: TdjResponse);  override;
+    function OnGetLastModified({%H-}Request: TdjRequest): TDateTime; override;
   end;
 
 { TCachedGetComponent }
@@ -647,7 +735,7 @@ end;
 type
   TPostComponent = class(TdjWebComponent)
   public
-    procedure OnPost(Request: TdjRequest; Response: TdjResponse); override;
+    procedure OnPost({%H-}Request: TdjRequest; Response: TdjResponse); override;
   end;
 
 { TPostComponent }
@@ -681,7 +769,7 @@ end;
 type
   THello2WebComponent = class(TdjWebComponent)
   public
-    procedure Service(Context: TdjServerContext; Request: TdjRequest;
+    procedure Service({%H-}Context: TdjServerContext; {%H-}Request: TdjRequest;
       Response: TdjResponse); override;
   end;
 
@@ -756,7 +844,7 @@ end;
 type
   TLogComponent = class(TdjWebComponent)
   public
-    procedure OnGet(Request: TdjRequest; Response: TdjResponse); override;
+    procedure OnGet({%H-}Request: TdjRequest; Response: TdjResponse); override;
   end;
 
 { TLogComponent }
@@ -809,14 +897,14 @@ begin
       Connector := TdjHTTPConnector.Create(Server.Handler);
       // TODO DOC not TdjHTTPConnector.Create(Server)!
       Connector.Host := '127.0.0.1';
-      Connector.Port := 80;
+      Connector.Port := 8080;
       // new property "HTTPServer" in 1.5
       // here used to set a file based logger for the HTTP server
       Connector.HTTPServer.Intercept := Intercept;
       Intercept.Filename := 'httpIntercept.log';
       Server.AddConnector(Connector);
       Context := TdjWebAppContext.Create('get');
-      Context.Add(TGetComponent, '/hello');
+      Context.AddWebComponent(TGetComponent, '/hello');
       Server.Add(Context);
       Server.Start;
 
@@ -843,14 +931,14 @@ begin
     Connector := TdjHTTPConnector.Create(Server.Handler);
     // TODO DOC not TdjHTTPConnector.Create(Server)!
     Connector.Host := '127.0.0.1';
-    Connector.Port := 80;
+    Connector.Port := 8080;
     SchedulerOfThreadPool := TIdSchedulerOfThreadPool.Create(Connector.HTTPServer);
     SchedulerOfThreadPool.PoolSize := 20;
     // set thread pool scheduler
     Connector.HTTPServer.Scheduler := SchedulerOfThreadPool;
     Server.AddConnector(Connector);
     Context := TdjWebAppContext.Create('get');
-    Context.Add(TGetComponent, '/hello');
+    Context.AddWebComponent(TGetComponent, '/hello');
     Server.Add(Context);
     Server.Start;
 
@@ -867,7 +955,7 @@ end;
 type
   TContextInitParamComponent = class(TdjWebComponent)
   public
-    procedure OnGet(Request: TdjRequest; Response: TdjResponse); override;
+    procedure OnGet({%H-}Request: TdjRequest; Response: TdjResponse); override;
   end;
 
 { TContextInitParamComponent }
@@ -890,7 +978,7 @@ begin
   Server := TdjServer.Create;
   try
     Context := TdjWebAppContext.Create('example');
-    Context.Add(TContextInitParamComponent, '/index.html');
+    Context.AddWebComponent(TContextInitParamComponent, '/index.html');
     Context.SetInitParameter('a', 'myValue');
     Server.Add(Context);
     Server.Start;
@@ -911,14 +999,14 @@ begin
   Server := TdjServer.Create;
   try
     Server.AddConnector('127.0.0.1', 8181);
-    Server.AddConnector('127.0.0.1', 80);
+    Server.AddConnector('127.0.0.1', 8080);
     Server.AddConnector('127.0.0.1', 8282); // unused, just to see the order
     // configure for context on standard port
     ContextPublic := TdjWebAppContext.Create('public');
-    ContextPublic.Add(TExamplePage, '/hello');
+    ContextPublic.AddWebComponent(TExamplePage, '/hello');
     // configure for context on special port
     Context := TdjWebAppContext.Create('get');
-    Context.Add(TExamplePage, '/hello');
+    Context.AddWebComponent(TExamplePage, '/hello');
     Context.ConnectorNames.Add('127.0.0.1:8181');
     Server.Add(ContextPublic);
     Server.Add(Context);
@@ -946,7 +1034,7 @@ end;
 type
   TCharSetComponent = class(TdjWebComponent)
   public
-    procedure OnGet(Request: TdjRequest; Response: TdjResponse);
+    procedure OnGet({%H-}Request: TdjRequest; Response: TdjResponse);
       override;
   end;
 
@@ -965,7 +1053,7 @@ begin
   Server := TdjServer.Create;
   try
     Context := TdjWebAppContext.Create('get');
-    Context.Add(TCharSetComponent, '/hello');
+    Context.AddWebComponent(TCharSetComponent, '/hello');
     Server.Add(Context);
     Server.Start;
 
@@ -988,7 +1076,7 @@ begin
   Server := TdjServer.Create;
   try
     Context := TdjWebAppContext.Create('get');
-    Context.Add(TCharSetComponent, '/hello');
+    Context.AddWebComponent(TCharSetComponent, '/hello');
     Server.Add(Context);
     Server.Start;
 
@@ -1021,6 +1109,442 @@ begin
     // set "If-Modified-Since" header to Now to get "304 resource not modified"
     CheckCachedGETResponseIs304(Now, '/cached/index.html');
 
+  finally
+    Server.Free;
+  end;
+end;
+
+type
+
+  { TTestFilter }
+
+  TTestFilter = class(TdjWebFilter)
+  public
+    procedure DoFilter({%H-}Context: TdjServerContext; {%H-}Request: TdjRequest;
+      {%H-}Response: TdjResponse; const {%H-}Chain: IWebFilterChain); override;
+  end;
+
+  { TTestFilterWithInit }
+
+  TTestFilterWithInit = class(TdjWebFilter)
+  private
+    FInitParam: string;
+  public
+    procedure Init(const Config: IWebFilterConfig); override;
+    procedure DoFilter({%H-}Context: TdjServerContext; {%H-}Request: TdjRequest;
+      {%H-}Response: TdjResponse; const {%H-}Chain: IWebFilterChain); override;
+  end;
+
+  { TFilterWithInitReadsContextConfiguration }
+
+  TFilterWithInitReadsContextConfiguration = class(TdjWebFilter)
+  private
+    StaticContent: string;
+  public
+    procedure Init(const Config: IWebFilterConfig); override;
+    procedure DoFilter(Context: TdjServerContext; Request: TdjRequest;
+      Response: TdjResponse; const Chain: IWebFilterChain); override;
+  end;
+
+  { TTestFilterA }
+
+  TTestFilterA = class(TdjWebFilter)
+  public
+    procedure DoFilter({%H-}Context: TdjServerContext; {%H-}Request: TdjRequest;
+      {%H-}Response: TdjResponse; const {%H-}Chain: IWebFilterChain); override;
+  end;
+
+  { TTestFilterB }
+
+  TTestFilterB = class(TdjWebFilter)
+  public
+    procedure DoFilter({%H-}Context: TdjServerContext; {%H-}Request: TdjRequest;
+      {%H-}Response: TdjResponse; const {%H-}Chain: IWebFilterChain); override;
+  end;
+
+procedure TFilterWithInitReadsContextConfiguration.Init(const Config: IWebFilterConfig);
+begin
+  StaticContent := 'from init';
+
+  if Config <> nil then StaticContent := StaticContent + ' 1';
+  if Config.GetContext <> nil then StaticContent := StaticContent + ' 2';
+  if Config.GetContext.GetContextConfig <> nil then StaticContent := StaticContent + ' 3';
+end;
+
+procedure TFilterWithInitReadsContextConfiguration.DoFilter(
+  Context: TdjServerContext; Request: TdjRequest; Response: TdjResponse;
+  const Chain: IWebFilterChain);
+begin
+  Chain.DoFilter(Context, Request, Response);
+  Response.ContentText := StaticContent;
+end;
+
+{ TTestFilter }
+
+procedure TTestFilter.DoFilter(Context: TdjServerContext; Request: TdjRequest;
+  Response: TdjResponse; const Chain: IWebFilterChain);
+begin
+   Chain.DoFilter(Context, Request, Response);
+   Response.ContentText := Response.ContentText + ' (filtered)';
+end;
+
+{ TTestFilterWithInit }
+
+procedure TTestFilterWithInit.Init(const Config: IWebFilterConfig);
+begin
+  FInitParam := Config.GetInitParameter('key');
+end;
+
+procedure TTestFilterWithInit.DoFilter(Context: TdjServerContext;
+  Request: TdjRequest; Response: TdjResponse; const Chain: IWebFilterChain);
+begin
+  Chain.DoFilter(Context, Request, Response);
+
+  if Response.ContentText <> '' then
+    Response.ContentText := Response.ContentText + ', ';
+
+  Response.ContentText := Response.ContentText + 'Param key=' + FInitParam;
+end;
+
+{ TTestFilterA }
+
+procedure TTestFilterA.DoFilter(Context: TdjServerContext; Request: TdjRequest;
+  Response: TdjResponse; const Chain: IWebFilterChain);
+begin
+  Chain.DoFilter(Context, Request, Response);
+  Response.ContentText := Response.ContentText + ' (A)';
+end;
+
+{ TTestFilterB }
+
+procedure TTestFilterB.DoFilter(Context: TdjServerContext; Request: TdjRequest;
+  Response: TdjResponse; const Chain: IWebFilterChain);
+begin
+  Chain.DoFilter(Context, Request, Response);
+  Response.ContentText := Response.ContentText + ' (B)';
+end;
+
+procedure TAPIConfigTests.TestOnlyAFilter;
+var
+  Server: TdjServer;
+  Context: TdjWebAppContext;
+begin
+  // configure
+  Context := TdjWebAppContext.Create('web');
+  Context.AddFilterWithMapping(TTestFilter, '*.html');
+
+  // run
+  Server := TdjServer.Create;
+  try
+    Server.Add(Context);
+    Server.Start;
+
+    CheckGETResponse404('/web/index.html');
+  finally
+    Server.Free;
+  end;
+end;
+
+procedure TAPIConfigTests.TestFilter;
+var
+  Server: TdjServer;
+  Context: TdjWebAppContext;
+begin
+  // configure
+  Context := TdjWebAppContext.Create('web');
+  Context.AddWebComponent(TExamplePage, '*.html');
+  Context.AddFilterWithMapping(TTestFilter, '*.html');
+
+  // run
+  Server := TdjServer.Create;
+  try
+    Server.Add(Context);
+    Server.Start;
+
+    CheckGETResponseEquals('example (filtered)', '/web/index.html');
+  finally
+    Server.Free;
+  end;
+end;
+
+procedure TAPIConfigTests.TestTwoFilters;
+var
+  Server: TdjServer;
+  Context: TdjWebAppContext;
+begin
+  // configure
+  Context := TdjWebAppContext.Create('web');
+  Context.AddWebComponent(TExamplePage, '*.html');
+  Context.AddFilterWithMapping(TTestFilterA, '*.html');
+  Context.AddFilterWithMapping(TTestFilterB, '*.html');
+
+  // run
+  Server := TdjServer.Create;
+  try
+    Server.Add(Context);
+    Server.Start;
+
+    CheckGETResponseEquals('example (A) (B)', '/web/index.html');
+  finally
+    Server.Free;
+  end;
+end;
+
+procedure TAPIConfigTests.TestTwoFiltersReversed;
+var
+  Server: TdjServer;
+  Context: TdjWebAppContext;
+begin
+  // configure
+  Context := TdjWebAppContext.Create('web');
+  Context.AddWebComponent(TExamplePage, '*.html');
+  Context.AddFilterWithMapping(TTestFilterB, '*.html');
+  Context.AddFilterWithMapping(TTestFilterA, '*.html');
+  Server := TdjServer.Create;
+
+  // run
+  try
+    Server.Add(Context);
+    Server.Start;
+
+    CheckGETResponseEquals('example (B) (A)', '/web/index.html');
+  finally
+    Server.Free;
+  end;
+end;
+
+procedure TAPIConfigTests.TestTwoFiltersAndTwoWebComponents;
+var
+  Server: TdjServer;
+  Context: TdjWebAppContext;
+begin
+  // configure
+  Context := TdjWebAppContext.Create('web');
+  Context.AddWebComponent(TExamplePage, '*.filterA');
+  Context.AddWebComponent(TGetComponent, '*.filterB');
+  Context.AddFilterWithMapping(TTestFilterA, '*.filterA');
+  Context.AddFilterWithMapping(TTestFilterB, '*.filterB');
+
+  // run
+  Server := TdjServer.Create;
+  try
+    Server.Add(Context);
+    Server.Start;
+
+    CheckGETResponseEquals('example (A)', '/web/page.filterA');
+    CheckGETResponseEquals('Hello (B)', '/web/page.filterB');
+  finally
+    Server.Free;
+  end;
+end;
+
+procedure TAPIConfigTests.TestFilterWithInit;
+var
+  Server: TdjServer;
+  Context: TdjWebAppContext;
+  FilterHolder: TdjWebFilterHolder;
+begin
+  // configure
+  Context := TdjWebAppContext.Create('web');
+  Context.SetInitParameter('a', 'b');
+  Context.AddWebComponent(TExamplePage, '*.filter');
+  FilterHolder := TdjWebFilterHolder.Create(TTestFilterWithInit);
+  FilterHolder.SetInitParameter('key', 'Hello, World!');
+  Context.AddWebFilter(FilterHolder, '*.filter');
+
+  // run
+  Server := TdjServer.Create;
+  try
+    Server.Add(Context);
+    Server.Start;
+    CheckGETResponseEquals('example, Param key=Hello, World!', '/web/page.filter');
+  finally
+    Server.Free;
+  end;
+end;
+
+procedure TAPIConfigTests.TestFilterInitCanReadContextConfiguration;
+var
+  Server: TdjServer;
+  Context: TdjWebAppContext;
+begin
+  // configure
+  Context := TdjWebAppContext.Create('web');
+  Context.AddWebComponent(TExamplePage, '*.filter');
+  Context.AddFilterWithMapping(TFilterWithInitReadsContextConfiguration, '*.filter');
+  Context.SetInitParameter('a', 'b');
+
+  // run
+  Server := TdjServer.Create;
+  try
+    Server.Add(Context);
+    Server.Start;
+    CheckGETResponseEquals('from init 1 2 3', '/web/page.filter');
+  finally
+    Server.Free;
+  end;
+end;
+
+procedure TAPIConfigTests.TestMapFilterTwiceToSameWebComponentRaisesException;
+var
+  Context: TdjWebAppContext;
+begin
+  // configure
+  Context := TdjWebAppContext.Create('web');
+  Context.AddWebComponent(TExamplePage, '*.html');
+  Context.AddFilterWithMapping(TTestFilter, '*.html');
+
+  {$IFDEF FPC}
+  ExpectException(EListError, '');
+  {$ELSE}
+  ExpectedException := EListError;
+  {$ENDIF}
+  try
+    Context.AddFilterWithMapping(TTestFilter, '*.html');
+  finally
+    Context.Free;
+  end;
+end;
+
+procedure TAPIConfigTests.TestCatchAllWebFilter;
+var
+  Server: TdjServer;
+  Context: TdjWebAppContext;
+begin
+  // configure
+  Context := TdjWebAppContext.Create('web');
+  Context.AddWebComponent(TExamplePage, '*.txt');
+  Context.AddFilterWithMapping(TTestFilter, '/*');
+
+  // run
+  Server := TdjServer.Create;
+  try
+    Server.Add(Context);
+    Server.Start;
+
+    CheckGETResponseEquals('example (filtered)', '/web/anypage.txt');
+  finally
+    Server.Free;
+  end;
+end;
+
+procedure TAPIConfigTests.TestExceptionInComponentInitWithWebFilter;
+var
+  Server: TdjServer;
+  Context: TdjWebAppContext;
+begin
+  // configure
+  Context := TdjWebAppContext.Create('web');
+  Context.AddWebComponent(TExceptionInInitComponent, '*.html');
+  Context.AddFilterWithMapping(TTestFilter, '/*');
+
+  // run
+  Server := TdjServer.Create;
+  try
+    Server.Add(Context);
+    Server.Start;
+
+    // Test the component
+    CheckGETResponse404('/web/exception.html');
+  finally
+    Server.Free;
+  end;
+end;
+
+procedure TAPIConfigTests.TestExceptionInComponentServiceWithWebFilter;
+var
+  Server: TdjServer;
+  Context: TdjWebAppContext;
+begin
+  // configure
+  Context := TdjWebAppContext.Create('web');
+  Context.AddWebComponent(TExceptionComponent, '*.html');
+  Context.AddFilterWithMapping(TTestFilter, '/*');
+
+  // run
+  Server := TdjServer.Create;
+  try
+    Server.Add(Context);
+    Server.Start;
+
+    // Test the component
+    CheckGETResponse500('/web/exception.html');
+  finally
+    Server.Free;
+  end;
+end;
+
+// test exception in Get  -------------------------------------------------
+type
+  TExceptionInOnGetComponent = class(TdjWebComponent)
+  public
+    procedure OnGet(Request: TdjRequest; Response: TdjResponse); override;
+  end;
+
+{ TExceptionInOnGetComponent }
+
+procedure TExceptionInOnGetComponent.OnGet(Request: TdjRequest;
+  Response: TdjResponse);
+begin
+  raise Exception.Create('Exception in OnGet');
+end;
+
+procedure TAPIConfigTests.TestExceptionInComponentOnGetWithWebFilter;
+var
+  Server: TdjServer;
+  Context: TdjWebAppContext;
+begin
+  // configure
+  Context := TdjWebAppContext.Create('web');
+  Context.AddWebComponent(TExceptionInOnGetComponent, '*.html');
+  Context.AddFilterWithMapping(TTestFilter, '/*');
+
+  // run
+  Server := TdjServer.Create;
+  try
+    Server.Add(Context);
+    Server.Start;
+
+    // Test the component
+    CheckGETResponse500('/web/exception.html');
+  finally
+    Server.Free;
+  end;
+end;
+
+// ----------------------------------------------------------------------------
+
+{ TTestFilterWithDestroy }
+type
+
+  TTestFilterWithDestroy = class(TTestFilter)
+  public
+    procedure DestroyFilter; override;
+  end;
+
+procedure TTestFilterWithDestroy.DestroyFilter;
+begin
+    raise EUnitTestException.Create('error in destroy');
+end;
+
+procedure TAPIConfigTests.TestWebFilterDestroyFilter;
+var
+  Server: TdjServer;
+  Context: TdjWebAppContext;
+begin
+  // configure
+  Context := TdjWebAppContext.Create('web');
+  Context.AddWebComponent(TExamplePage, '*.html');
+  Context.AddFilterWithMapping(TTestFilterWithDestroy, '/*');
+
+  // run
+  Server := TdjServer.Create;
+  try
+    Server.Add(Context);
+    Server.Start;
+
+    // Test the component
+    CheckGETResponse200('/web/destroy.html');
   finally
     Server.Free;
   end;

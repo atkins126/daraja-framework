@@ -62,7 +62,7 @@ uses
 type
   TExamplePage = class(TdjWebComponent)
   public
-    procedure OnGet(Request: TdjRequest; Response: TdjResponse);
+    procedure OnGet({%H-}Request: TdjRequest; Response: TdjResponse);
       override;
   end;
 
@@ -81,8 +81,8 @@ var
 begin
   Context := TdjWebAppContext.Create('');
   try
-    Context.Add(TExamplePage, '/a');
-    Context.Add(TExamplePage, '/b');
+    Context.AddWebComponent(TExamplePage, '/a');
+    Context.AddWebComponent(TExamplePage, '/b');
   finally
     Context.Free;
   end;
@@ -95,7 +95,7 @@ begin
   Context := TdjWebAppContext.Create('foo');
 
   try
-    Context.Add(TExamplePage, '/bar');
+    Context.AddWebComponent(TExamplePage, '/bar');
 
     {$IFDEF FPC}
     ExpectException(EWebComponentException, 'Mapping key exists');
@@ -104,7 +104,7 @@ begin
     {$ENDIF}
 
     // same path -> error
-    Context.Add(TExamplePage, '/bar');
+    Context.AddWebComponent(TExamplePage, '/bar');
 
   finally
     Context.Free;

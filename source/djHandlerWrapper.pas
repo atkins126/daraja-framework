@@ -34,11 +34,13 @@ interface
 
 uses
   djAbstractHandlerContainer, djServerContext, djInterfaces,
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   djLogAPI, djLoggerFactory,
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
   djTypes,
+  {$IFDEF FPC}{$NOTES OFF}{$ENDIF}{$HINTS OFF}{$WARNINGS OFF}
   IdCustomHTTPServer;
+  {$IFDEF FPC}{$ELSE}{$HINTS ON}{$WARNINGS ON}{$ENDIF}
 
 (**
  * A HandlerWrapper acts as a IHandler but delegates the handle method
@@ -125,7 +127,9 @@ type
 implementation
 
 uses
+  {$IFDEF FPC}{$NOTES OFF}{$ENDIF}{$HINTS OFF}{$WARNINGS OFF}
   IdCustomTCPServer,
+  {$IFDEF FPC}{$ELSE}{$HINTS ON}{$WARNINGS ON}{$ENDIF}
   SysUtils;
 
 { TdjHandlerWrapper }
@@ -212,28 +216,6 @@ begin
   end;
 
 end;
-
-(*
-procedure TdjHandlerWrapper.LogHierarchy;
-{$IFDEF DARAJA_LOGGING}
-var
-  C: IHandlerContainer;
-{$ENDIF DARAJA_LOGGING}
-begin
-{$IFDEF DARAJA_LOGGING}
-  Logger.Info(ClassName);
-
-  if Supports(Handler, IHandlerContainer, C) then
-  begin
-    Logger.Info(ClassName + ' - wraps a IHandlerContainer:');
-    C.LogHierarchy;
-  end else begin
-    Logger.Info(ClassName + ' - wraps a IHandler');
-  end;
-
-{$ENDIF DARAJA_LOGGING}
-end;
-*)
 
 // IHandler
 

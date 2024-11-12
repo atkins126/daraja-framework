@@ -38,26 +38,23 @@ uses
 
 type
   (**
-   * Holds a reference to a web component class and its instance.
+   * Holds a reference to a web component or web filter instance.
    *)
+
+  { TdjGenericHolder }
+
   TdjGenericHolder<T: TInterfacedObject> = class(TdjLifeCycle)
   private
     FName: string;
-
   public
-    (**
-     * Create a TdjGenericHolder.
-     *)
-    constructor Create(const AClass: TInterfacedClass); reintroduce;
-
+    constructor Create(AClass: TInterfacedClass); reintroduce;
     // properties
     property Name: string read FName write FName;
-
   end;
 
 implementation
 
-constructor TdjGenericHolder<T>.Create(const AClass: TInterfacedClass);
+constructor TdjGenericHolder<T>.Create(AClass: TInterfacedClass);
 begin
   inherited Create;
 

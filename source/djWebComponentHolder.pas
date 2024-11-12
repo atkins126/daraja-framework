@@ -34,34 +34,30 @@ interface
 
 uses
   djWebComponent, djGenericHolder, djLifeCycle, djInterfaces,
-  djWebComponentConfig,
-{$IFDEF DARAJA_LOGGING}
+  djWebComponentConfig, djServerContext, djTypes,
+  {$IFDEF DARAJA_LOGGING}
   djLogAPI, djLoggerFactory,
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
   Classes;
 
 type
   (**
-   * Holds a WebComponent (class reference) and configuration info.
-   *
-   * A WebComponent instance will be created 'on the fly'
-   * when the WebComponent property is accessed.
-   * (lazy instantiation).
+   * Holds a WebComponent and configuration data.
    *)
+
+  { TdjWebComponentHolder }
+
   TdjWebComponentHolder = class(TdjGenericHolder<TdjWebComponent>)
   private
-{$IFDEF DARAJA_LOGGING}
+    {$IFDEF DARAJA_LOGGING}
     Logger: ILogger;
-{$ENDIF DARAJA_LOGGING}
-
-    FConfig: TdjWebComponentConfig;
+    {$ENDIF DARAJA_LOGGING}
+    FConfig: IWebComponentConfig;
     FClass: TdjWebComponentClass;
     FWebComponent: TdjWebComponent;
 
     procedure Trace(const S: string);
-
     function GetWebComponent: TdjWebComponent;
-
     function GetClass: TdjWebComponentClass;
 
   public
@@ -70,7 +66,7 @@ type
      *
      * \param WebComponentClass the Web Component class
      *)
-    constructor Create(const WebComponentClass: TdjWebComponentClass);
+    constructor Create(WebComponentClass: TdjWebComponentClass); overload;
 
     (**
      * Destructor.
@@ -98,17 +94,19 @@ type
     procedure SetInitParameter(const Key: string; const Value: string);
 
     (**
-     * Start the handler.
+     * Start the component.
      *)
     procedure DoStart; override;
 
     (**
-     * Stop the handler.
+     * Stop the component.
      *)
-     procedure DoStop; override;
+    procedure DoStop; override;
+
+    procedure Handle(Context: TdjServerContext; {%H-}Request: TdjRequest;
+       {%H-}Response: TdjResponse);
 
     // properties
-
     (**
      * The Web Component Class.
      *)
@@ -123,19 +121,19 @@ type
 implementation
 
 uses
+  djWebComponentHandler,
   SysUtils;
 
 { TdjWebComponentHolder }
 
-constructor TdjWebComponentHolder.Create(
-  const WebComponentClass: TdjWebComponentClass);
+constructor TdjWebComponentHolder.Create(WebComponentClass: TdjWebComponentClass);
 begin
   inherited Create(WebComponentClass);
 
   // logging -----------------------------------------------------------------
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   Logger := TdjLoggerFactory.GetLogger('dj.' + TdjWebComponentHolder.ClassName);
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 
   FConfig := TdjWebComponentConfig.Create;
   FClass := WebComponentClass;
@@ -146,20 +144,17 @@ end;
 destructor TdjWebComponentHolder.Destroy;
 begin
   {$IFDEF LOG_DESTROY}Trace('Destroy');{$ENDIF}
-
-  FConfig.Free;
-
   inherited;
 end;
 
 procedure TdjWebComponentHolder.Trace(const S: string);
 begin
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   if Logger.IsTraceEnabled then
   begin
     Logger.Trace(S);
   end;
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 end;
 
 function TdjWebComponentHolder.GetClass: TdjWebComponentClass;
@@ -179,12 +174,15 @@ end;
 
 procedure TdjWebComponentHolder.SetContext(const Context: IContext);
 begin
-  FConfig.SetContext(Context);
+  Assert(Context <> nil);
+  Assert(Context.GetContextConfig <> nil); // TODO check this happens before Context init is called
+  (FConfig as IWriteableConfig).SetContext(Context);
 end;
 
-procedure TdjWebComponentHolder.SetInitParameter(const Key, Value: string);
+procedure TdjWebComponentHolder.SetInitParameter(const Key: string;
+  const Value: string);
 begin
-  FConfig.Add(Key, Value);
+  (FConfig as IWriteableConfig).Add(Key, Value);
 end;
 
 procedure TdjWebComponentHolder.DoStart;
@@ -195,6 +193,7 @@ begin
 
   Assert(FConfig <> nil);
   Assert(FConfig.GetContext <> nil);
+  Assert(FConfig.GetContext.GetContextConfig <> nil);
 
   Trace('Create instance of class ' + FClass.ClassName);
   FWebComponent := FClass.Create;
@@ -205,15 +204,17 @@ begin
   except
     on E: Exception do
     begin
-{$IFDEF DARAJA_LOGGING}
+      {$IFDEF DARAJA_LOGGING}
       Logger.Warn(
         Format('Could not start "%s". Init method raised %s with message "%s".', [
         FClass.ClassName, E.ClassName, E.Message]),
         E);
-{$ENDIF DARAJA_LOGGING}
+      {$ENDIF DARAJA_LOGGING}
 
       Trace('Free the Web Component  "' + Name + '"');
       FWebComponent.Free;
+//      Self.Stop;  /Todo
+
       raise;
     end;
   end;
@@ -227,14 +228,20 @@ begin
   except
     on E: Exception do
     begin
-{$IFDEF DARAJA_LOGGING}
+      {$IFDEF DARAJA_LOGGING}
       Logger.Warn('TdjWebComponentHolder.Stop: ' + E.Message, E);
-{$ENDIF DARAJA_LOGGING}
+      {$ENDIF DARAJA_LOGGING}
       // TODO raise ?;
     end;
   end;
 
   inherited;
+end;
+
+procedure TdjWebComponentHolder.Handle(Context: TdjServerContext;
+  Request: TdjRequest; Response: TdjResponse);
+begin
+  TdjWebComponentHandler.InvokeService(WebComponent, Context, Request, Response);
 end;
 
 end.

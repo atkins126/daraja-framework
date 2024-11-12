@@ -39,8 +39,11 @@ type
   (**
    * Generic configuration.
    *)
-  TdjAbstractConfig = class(TInterfacedObject)
-  protected
+
+  { TdjAbstractConfig }
+
+  TdjAbstractConfig = class(TInterfacedObject, IWriteableConfig)
+  private
     (**
      * Initialization parameters.
      *)
@@ -55,7 +58,7 @@ type
     (**
      * Constructor.
      *)
-    constructor Create; overload;
+    constructor Create;
 
     (**
      * Destructor.
@@ -102,7 +105,7 @@ implementation
 
 constructor TdjAbstractConfig.Create;
 begin
-  inherited Create;
+  inherited;
 
   FParams := TdjInitParameters.Create;
 end;
@@ -147,10 +150,10 @@ end;
 
 procedure TdjAbstractConfig.SetContext(const Context: IContext);
 begin
-  if not Assigned(Context) then
+  if Context = nil then
     raise EWebComponentException.Create('Context can not be set to nil');
 
-  if Assigned(FContext) then
+  if (FContext <> nil) and (Context <> FContext) then
     raise EWebComponentException.Create('Context must not be changed');
 
   FContext := Context;

@@ -45,7 +45,6 @@ uses
   HttpsTests,
   TestHelper,
   TestSessions,
-  IdGlobal,
   testregistry,
   fpcunit,
   GuiTestRunner,
@@ -79,6 +78,6 @@ begin
   end;
 
   {$IFNDEF LINUX}
-  SetHeapTraceOutput('heaptrace.log');
+  // SetHeapTraceOutput('heaptrace.log');
   {$ENDIF}
 end.

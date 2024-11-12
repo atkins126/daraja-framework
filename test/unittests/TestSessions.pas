@@ -64,7 +64,7 @@ uses
 type
   TExamplePage = class(TdjWebComponent)
   public
-    procedure OnGet(Request: TdjRequest; Response: TdjResponse); override;
+    procedure OnGet({%H-}Request: TdjRequest; Response: TdjResponse); override;
   end;
 
   TSessionDetector = class(TdjHandlerWrapper)
@@ -125,7 +125,7 @@ begin
 
     // create component and register it
     Context := TdjWebAppContext.Create('session', True);
-    Context.Add(TExamplePage, '/example');
+    Context.AddWebComponent(TExamplePage, '/example');
     Server.Add(Context);
 
     Server.Start;
@@ -147,7 +147,7 @@ begin
   try
     // create component and register it
     Context := TdjWebAppContext.Create('session', True);
-    Context.Add(TExamplePage, '/example');
+    Context.AddWebComponent(TExamplePage, '/example');
     Server.Add(Context);
 
     // Handler
@@ -177,7 +177,7 @@ begin
     // add a configured connector TODO DOC not (Server)!
     Connector := TdjHTTPConnector.Create(Server.Handler);
     Connector.Host := '127.0.0.1';
-    Connector.Port := 80;
+    Connector.Port := 8080;
     Connector.HTTPServer.AutoStartSession := True;
     Server.AddConnector(Connector);
 
@@ -230,7 +230,7 @@ begin
   try
     // create component and register it
     Context := TdjWebAppContext.Create('get');
-    Context.Add(TSessionComponent, '/hello');
+    Context.AddWebComponent(TSessionComponent, '/hello');
 
     Server.Add(Context);
     Server.Start;
@@ -251,7 +251,7 @@ begin
   try
     // create component and register it
     Context := TdjWebAppContext.Create('post', True);
-    Context.Add(TSessionPOSTComponent, '/hello');
+    Context.AddWebComponent(TSessionPOSTComponent, '/hello');
 
     Server.Add(Context);
     Server.Start;

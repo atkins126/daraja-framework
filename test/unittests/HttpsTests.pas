@@ -50,7 +50,9 @@ implementation
 uses
   djWebAppContext, djWebComponent, djWebComponentContextHandler, djServer,
   djHTTPConnector, djTypes,
+  {$IFDEF FPC}{$NOTES OFF}{$ENDIF}{$HINTS OFF}{$WARNINGS OFF}
   IdSSLOpenSSL,
+  {$IFDEF FPC}{$ELSE}{$HINTS ON}{$WARNINGS ON}{$ENDIF}
   IdGlobal,
   SysUtils, Classes;
 
@@ -59,7 +61,7 @@ uses
 type
   TExamplePage = class(TdjWebComponent)
   public
-    procedure OnGet(Request: TdjRequest; Response: TdjResponse); override;
+    procedure OnGet({%H-}Request: TdjRequest; Response: TdjResponse); override;
   end;
 
   { TExamplePage }
@@ -94,7 +96,7 @@ begin
 
     // add context
     Context := TdjWebAppContext.Create('tls');
-    Context.Add(TExamplePage, '/test');
+    Context.AddWebComponent(TExamplePage, '/test');
     Server.Add(Context);
     Server.Start;
 

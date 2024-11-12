@@ -33,7 +33,7 @@ interface
 {$i IdCompilerDefines.inc}
 
 const
-  DWF_SERVER_VERSION = '2.5-SNAPSHOT';
+  DWF_SERVER_VERSION = '3.0-MS1';
   DWF_SERVER_FULL_NAME = 'Daraja HTTP Framework ' + DWF_SERVER_VERSION;
   DWF_SERVER_COPYRIGHT = 'Copyright (C) Michael Justin';
 
@@ -53,7 +53,7 @@ var
   end;
 
 begin
-  SetLength(Result, Length(AData) * 6);
+  SetLength(Result{%H-}, Length(AData) * 6);
   Pos := 1;
   for I := 1 to length(AData) do
   begin

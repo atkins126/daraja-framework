@@ -34,9 +34,9 @@ interface
 
 uses
   djInterfaces, djServerContext, djContextConfig, djHandlerWrapper,
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   djLogAPI, djLoggerFactory,
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
   djTypes,
   Classes;
 
@@ -48,15 +48,17 @@ type
   (**
    * Context implementation.
    *)
-  TdjContext = class(TInterfacedObject, IContext)
+  TdjContext = class(TInterfacedObject, IContext, IWriteableConfig)
   private
-{$IFDEF DARAJA_LOGGING}
+    {$IFDEF DARAJA_LOGGING}
     ContextLogger: ILogger;
-{$ENDIF DARAJA_LOGGING}
-
-    FContextConfig: IContextConfig;
-
+    {$ENDIF DARAJA_LOGGING}
+    FConfig: IContextConfig;
     FContextPath: string;
+
+    // IWriteableConfig
+    procedure Add(const Key: string; const Value: string);
+    procedure SetContext(const Context: IContext);
 
     (**
      * a-z A-Z 0-9 . - _ ~ ! $ & ' ( ) * + , ; = : @
@@ -83,20 +85,20 @@ type
 
     (**
      * Get the context configuration.
-	   * \return the context configuration
+     * \return the context configuration
      *)
     function GetContextConfig: IContextConfig;
 
     (**
      * Get the context path.
-	   * \return the context path.
+     * \return the context path.
      *)
     function GetContextPath: string;
 
     (**
      * Get the init parameter with the given name.
-	   * \param Key the parameter name
-	   * \return the init parameter value
+     * \param Key the parameter name
+     * \return the init parameter value
      *)
     function GetInitParameter(const Key: string): string;
 
@@ -121,24 +123,20 @@ type
   (**
    * Context handler.
    *)
+
+  { TdjContextHandler }
+
   TdjContextHandler = class(TdjHandlerWrapper)
   private
-{$IFDEF DARAJA_LOGGING}
+    {$IFDEF DARAJA_LOGGING}
     Logger: ILogger;
-{$ENDIF DARAJA_LOGGING}
-
+    {$ENDIF DARAJA_LOGGING}
     FContext: IContext;
-
-    FConfig: TdjContextConfig;
-
     FConnectorNames: TStrings;
-
     FErrorHandler: IHandler;
 
     procedure Trace(const S: string);
-
     function GetContextPath: string;
-
     procedure SetErrorHandler(const Value: IHandler);
 
   protected
@@ -208,15 +206,13 @@ type
      *
      * \sa IHandler
      *)
-    procedure Handle(const Target: string; Context: TdjServerContext;
-      Request: TdjRequest; Response: TdjResponse); override;
+    procedure Handle(const Target: string; {%H-}Context: TdjServerContext;
+      {%H-}Request: TdjRequest; {%H-}Response: TdjResponse); override;
 
     // properties
 
     property ConnectorNames: TStrings read FConnectorNames;
-
     property ContextPath: string read GetContextPath;
-
     property ErrorHandler: IHandler read FErrorHandler write SetErrorHandler;
 
   end;
@@ -233,18 +229,20 @@ begin
   inherited Create;
 
   // logging -----------------------------------------------------------------
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   ContextLogger := TdjLoggerFactory.GetLogger(ContextPath);
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 
   ValidateContextPath(ContextPath);
 
+  // TODO check why creation is needed here (actually it is accessed before init is called)
+  FConfig := TdjContextConfig.Create;
   FContextPath := ContextPath;
 end;
 
 function TdjContext.GetContextConfig: IContextConfig;
 begin
-  Result := FContextConfig;
+  Result := FConfig;
 end;
 
 function TdjContext.GetContextPath: string;
@@ -254,12 +252,12 @@ end;
 
 function TdjContext.GetInitParameter(const Key: string): string;
 begin
-  Result := FContextConfig.GetInitParameter(Key);
+  Result := FConfig.GetInitParameter(Key);
 end;
 
 function TdjContext.GetInitParameterNames: TdjStrings;
 begin
-  Result := FContextConfig.GetInitParameterNames;
+  Result := FConfig.GetInitParameterNames;
 end;
 
 procedure TdjContext.ValidateContextPath(const ContextPath: string);
@@ -302,19 +300,30 @@ end;
 
 procedure TdjContext.Init(const Config: IContextConfig);
 begin
-  FContextConfig := TdjContextConfig.Create(Config);
+  // iow: does it decrease the reference count?
+  FConfig := Config; // TODO check if it is ok to overwrite the field here with a new one
+end;
+
+procedure TdjContext.Add(const Key, Value: string);
+begin
+  (GetContextConfig as IWriteableConfig).Add(Key, Value);
+end;
+
+procedure TdjContext.SetContext(const Context: IContext);
+begin
+  // do nothing, we are in the context
 end;
 
 procedure TdjContext.Log(const Msg: string);
 begin
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   ContextLogger.Info(Msg);
-{$ELSE}
+  {$ELSE}
   if System.IsConsole then
   begin
     WriteLn(Msg);
   end;
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 end;
 
 { TdjContextHandler }
@@ -324,31 +333,17 @@ begin
   inherited Create;
 
   // logging -----------------------------------------------------------------
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   Logger := TdjLoggerFactory.GetLogger('dj.' + TdjContextHandler.ClassName);
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 
   FContext := TdjContext.Create(ContextPath);
-
-  FConfig := TdjContextConfig.Create;
-  FConfig.SetContext(FContext);
-
   FConnectorNames := TStringList.Create;
-
-{$IFDEF LOG_CREATE}
-  Trace('Created context ' + ContextPath);
-{$ENDIF}
 end;
 
 destructor TdjContextHandler.Destroy;
 begin
-{$IFDEF LOG_DESTROY}
-  Trace('Destroy');
-{$ENDIF}
-
   FConnectorNames.Free;
-
-  FConfig.Free;
 
   inherited;
 end;
@@ -360,6 +355,7 @@ end;
 
 function TdjContextHandler.GetCurrentContext: IContext;
 begin
+  Assert(FContext <> nil);
   Result := FContext;
 end;
 
@@ -370,12 +366,12 @@ end;
 
 procedure TdjContextHandler.Trace(const S: string);
 begin
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   if Logger.IsTraceEnabled then
   begin
     Logger.Trace(S);
   end;
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 end;
 
 function TdjContextHandler.ContextMatches(const ConnectorName, Target: string): Boolean;
@@ -402,26 +398,23 @@ end;
 procedure TdjContextHandler.SetInitParameter(const Key, Value: string);
 begin
   CheckStarted;
-  FConfig.Add(Key, Value);
+  (FContext as IWriteableConfig).Add(Key, Value);
 end;
 
 procedure TdjContextHandler.DoStart;
 begin
   inherited;
 
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   Logger.Info('Starting context ' + ContextPath);
-{$ENDIF DARAJA_LOGGING}
-
-  // configure the context
-  FContext.Init(Self.FConfig);
+  {$ENDIF DARAJA_LOGGING}
 end;
 
 procedure TdjContextHandler.DoStop;
 begin
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   Logger.Info('Stopping context ' + ContextPath);
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 
   inherited;
 end;

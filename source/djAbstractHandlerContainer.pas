@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,31 +30,23 @@ unit djAbstractHandlerContainer;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djAbstractHandler,
   djInterfaces;
 
 type
+  { TdjAbstractHandlerContainer }
+
   (**
    * This is the base class for handlers that may contain other handlers.
    *)
   TdjAbstractHandlerContainer = class(TdjAbstractHandler, IHandlerContainer)
-
   protected
-    (**
-     * Add a handler.
-     * \param Handler the handler to be added.
-     *)
+    // IHandlerContainer interface
     procedure AddHandler(const Handler: IHandler); virtual; abstract;
-
-    (**
-     * Remove a handler.
-     * \param Handler the handler to be removed.
-     *)
     procedure RemoveHandler(const Handler: IHandler); virtual; abstract;
-
   end;
 
 implementation

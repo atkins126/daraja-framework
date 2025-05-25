@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,7 +30,7 @@ unit djLifeCycle;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djInterfaces,
@@ -40,6 +40,8 @@ uses
   SyncObjs;
 
 type
+  { TdjLifeCycle }
+
   (**
    * Abstract LifeCycle implementation.
    *)
@@ -50,9 +52,9 @@ type
     
     CS: TCriticalSection;
 
-{$IFDEF DARAJA_LOGGING}
+    {$IFDEF DARAJA_LOGGING}
     Logger: ILogger;
-{$ENDIF DARAJA_LOGGING}
+    {$ENDIF DARAJA_LOGGING}
 
     procedure Trace(const S: string);
 
@@ -81,47 +83,18 @@ type
     procedure CheckStopped;
 
   public
+    // ILifeCycle interface
+    procedure Start;
+    procedure Stop;
+    function IsStarted: Boolean;
+    function IsStopped: Boolean;
+  public
     constructor Create; virtual;
     destructor Destroy; override;
 
-    // ILifeCycle interface
-
-    (**
-     * Start the handler.
-     *
-     * \sa ILifeCycle
-     *)
-    procedure Start;
-
-    (**
-     * Stop the handler.
-     *
-     * \sa ILifeCycle
-     *)
-     procedure Stop;
-
-    (**
-     * \return True if the state is "started"
-     *)
-    function IsStarted: Boolean;
-
-    (**
-     * \return True if the state is "stopped"
-     *)
-    function IsStopped: Boolean;
-
     // properties
-
-    (**
-     * True if the state is "started".
-     *)
     property Started: Boolean read FStarted write SetStarted;
-
-    (**
-     * True if the state is "stopped"
-     *)
     property Stopped: Boolean read FStopped write SetStopped;
-
   end;
 
 implementation
@@ -148,22 +121,22 @@ begin
   inherited Create;
 
   // logging -----------------------------------------------------------------
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   Logger := TdjLoggerFactory.GetLogger('dj.' + TdjLifeCycle.ClassName);
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 
   CS := TCriticalSection.Create;
 
   FStopped := True;
 
-{$IFDEF LOG_CREATE}Trace('Created');
-{$ENDIF}
+  {$IFDEF LOG_CREATE}Trace('Created');
+  {$ENDIF}
 end;
 
 destructor TdjLifeCycle.Destroy;
 begin
-{$IFDEF LOG_DESTROY}Trace('Destroy');
-{$ENDIF}
+  {$IFDEF LOG_DESTROY}Trace('Destroy');
+  {$ENDIF}
 
   CS.Free;
 
@@ -198,12 +171,12 @@ end;
 
 procedure TdjLifeCycle.Trace(const S: string);
 begin
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   if Logger.IsTraceEnabled then
   begin
     Logger.Trace(S);
   end;
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 end;
 
 // methods

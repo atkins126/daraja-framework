@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,10 +30,10 @@ unit djServer;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
-  djInterfaces, djHTTPConnector, djServerBase, djServerInterfaces,
+  djInterfaces, djTypes, djHTTPConnector, djServerBase, djServerInterfaces,
   djWebComponentContextHandler, djContextHandlerCollection,
   {$IFDEF DARAJA_LOGGING}
   djLogAPI, djLoggerFactory,
@@ -48,24 +48,24 @@ const
   DEFAULT_BINDING_IP = '127.0.0.1'; // instead of '0.0.0.0';
 
   (**
-   * \mainpage Welcome to Daraja HTTP Framework!
+   * @mainpage Welcome to Daraja HTTP Framework!
    *
-   * \section intro Introduction
+   * @section intro Introduction
    *
    * Daraja is a flexible HTTP server framework for Object Pascal, based on the stand-alone HTTP server in the free open source library Internet Direct (Indy).
    * Daraja provides the core foundation for serving HTTP resources of all content-types such as HTML pages, images, scripts, web service responses etc. by mapping resource paths to your own code. Your code then can create the response content, or let the framework serve a static file.
    *
    * It allows to compose web applications with these building blocks:
    *
-   * \li a \link TdjWebComponent Web Component base class \endlink which provides HTTP method handling (OnGet, OnPost, OnPut etc.)
-   * \li a \link TdjWebFilter Web Filter base class \endlink for request interception and modification (pre- and postprocessing)
-   * \li a HTTP server run time environment, based on <a target="_blank" href="http://www.indyproject.org/">Internet Direct (Indy)</a>
+   * @li a \link TdjWebComponent Web Component base class \endlink which provides HTTP method handling (OnGet, OnPost, OnPut etc.)
+   * @li a \link TdjWebFilter Web Filter base class \endlink for request interception and modification (pre- and postprocessing)
+   * @li a HTTP server run time environment, based on <a target="_blank" href="http://www.indyproject.org/">Internet Direct (Indy)</a>
    *
-   * Copyright (C) Michael Justin
+   * Copyright (c) Michael Justin
    * https://www.habarisoft.com/
    * Mail: mailto:info@habarisoft.com
    *
-   * \section trademarks Trademarks
+   * @section trademarks Trademarks
    *
    * Habari is a registered trademark of Michael Justin and is protected by the
    * laws of Germany and other countries.
@@ -77,12 +77,11 @@ const
    *)
 
 type
+  { TdjServer }
+
   (**
    * Basic server class for the Web Component framework.
    *)
-
-  { TdjServer }
-
   TdjServer = class(TdjServerBase)
   private
     {$IFDEF DARAJA_LOGGING}
@@ -98,7 +97,10 @@ type
     procedure StartConnectors;
     procedure StopConnectors;
     procedure StopContextHandlers;
-
+  protected
+    // TdjLifeCycle overrides
+    procedure DoStart; override;
+    procedure DoStop; override;
   public
     (**
      * Create a TdjServer using the default host and port.
@@ -108,15 +110,15 @@ type
     (**
      * Create a TdjServer, using the specified port and the default host.
      *
-     * \param APort the port to be used.
+     * @param APort the port to be used.
      *)
     constructor Create(const APort: Integer); reintroduce; overload;
 
     (**
      * Create a TdjServer, using the specfied host and port.
      *
-     * \param AHost the host to be used.
-     * \param APort the port to be used.
+     * @param AHost the host to be used.
+     * @param APort the port to be used.
      *)
     constructor Create(const AHost: string;
       const APort: Integer = DEFAULT_BINDING_PORT); reintroduce; overload;
@@ -129,43 +131,31 @@ type
     (**
      * Add a preconfigured connector.
      *
-     * \param Connector the connector
+     * @param Connector the connector
      *)
     procedure AddConnector(const Connector: IConnector); overload;
 
     (**
      * Create and add a connector for a host and port.
      *
-     * \param Host the connector host name
-     * \param Port the connector port number
+     * @param Host the connector host name
+     * @param Port the connector port number
      *)
     procedure AddConnector(const Host: string; Port: Integer = DEFAULT_BINDING_PORT); overload;
 
     (**
      * Add a new context.
      *
-     * \param Context the context handler.
+     * @param Context the context handler.
      *)
     procedure Add(Context: TdjWebComponentContextHandler);
 
     (**
      * The number of connectors.
      *
-     * \returns number of connectors
+     * @returns number of connectors
      *)
     function ConnectorCount: Integer;
-
-    // ILifeCycle interface
-
-    (**
-     * Start the handler.
-     *)
-    procedure DoStart; override;
-
-    (**
-     * Stop the handler.
-     *)
-    procedure DoStop; override;
 
   end;
 
@@ -322,12 +312,12 @@ end;
 
 procedure TdjServer.Trace(const S: string);
 begin
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   if Logger.IsTraceEnabled then
   begin
     Logger.Trace(S);
   end;
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 end;
 
 

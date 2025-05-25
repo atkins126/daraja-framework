@@ -1,6 +1,6 @@
 (*
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -13,7 +13,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
     You can be released from the requirements of the license by purchasing
     a commercial license. Buying such a license is mandatory as soon as you
@@ -125,7 +125,7 @@ begin
 
     // create component and register it
     Context := TdjWebAppContext.Create('session', True);
-    Context.AddWebComponent(TExamplePage, '/example');
+    Context.Add(TExamplePage, '/example');
     Server.Add(Context);
 
     Server.Start;
@@ -147,7 +147,7 @@ begin
   try
     // create component and register it
     Context := TdjWebAppContext.Create('session', True);
-    Context.AddWebComponent(TExamplePage, '/example');
+    Context.Add(TExamplePage, '/example');
     Server.Add(Context);
 
     // Handler
@@ -230,7 +230,7 @@ begin
   try
     // create component and register it
     Context := TdjWebAppContext.Create('get');
-    Context.AddWebComponent(TSessionComponent, '/hello');
+    Context.Add(TSessionComponent, '/hello');
 
     Server.Add(Context);
     Server.Start;
@@ -251,7 +251,7 @@ begin
   try
     // create component and register it
     Context := TdjWebAppContext.Create('post', True);
-    Context.AddWebComponent(TSessionPOSTComponent, '/hello');
+    Context.Add(TSessionPOSTComponent, '/hello');
 
     Server.Add(Context);
     Server.Start;

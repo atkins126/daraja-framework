@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,65 +30,42 @@ unit djDefaultWebComponent;
 
 interface
 
-{$i IdCompilerDefines.inc}
-
 uses
   djWebComponent, djInterfaces, djServerContext,
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   djLogAPI, djLoggerFactory,
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
   djTypes;
 
 type
+  { TdjDefaultWebComponent }
+  
   (**
    * Web Component for static context.
+   *
+   * @note This class is unsupported demonstration code.
    *)
   TdjDefaultWebComponent = class(TdjWebComponent)
   private
-{$IFDEF DARAJA_LOGGING}
+    {$IFDEF DARAJA_LOGGING}
     Logger: ILogger;
-{$ENDIF DARAJA_LOGGING}
+    {$ENDIF DARAJA_LOGGING}
 
     ContextPath: string;
-
     StaticResourcePath: string;
-
     procedure Trace(const S: string);
-
     (**
      * Called in Init to set the path to static content.
      *)
     procedure SetStaticResourcePath;
-
     (**
      * Remove the context from the resource URL
      *)
     function StripContext(const Doc: string): string;
-
   public
-    (**
-      * Called by the container on startup.
-      *
-      * \note if this method is overridden, the overriding code
-      * must also call inherited Init.
-      * \param Config the configuration
-      * \throws EWebComponentException if initialization failed
-      *)
     procedure Init(const Config: IWebComponentConfig); override;
-
     // IHandler interface
-
-    (**
-     * Handle a HTTP request.
-     *
-     * \param Context HTTP server context
-     * \param Request HTTP request
-     * \param Response HTTP response
-     * \throws EWebComponentException if an exception occurs that interferes with the component's normal operation
-     * \sa IHandler
-     *)
     procedure Service(Context: TdjServerContext; Request: TdjRequest; Response: TdjResponse); override;
-
   end;
 
 implementation
@@ -102,22 +79,21 @@ uses
 
 procedure TdjDefaultWebComponent.Trace(const S: string);
 begin
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   if Logger.IsTraceEnabled then
   begin
     Logger.Trace(S);
   end;
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 end;
 
 procedure TdjDefaultWebComponent.Init(const Config: IWebComponentConfig);
 begin
   inherited;
 
-  // logging -----------------------------------------------------------------
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   Logger := TdjLoggerFactory.GetLogger('dj.' + TdjDefaultWebComponent.ClassName);
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 
   // copy the context path
   ContextPath := Config.GetContext.GetContextPath;
@@ -132,11 +108,11 @@ begin
   else
   begin
 
-{$IFDEF DARAJA_LOGGING}
+    {$IFDEF DARAJA_LOGGING}
     Logger.Warn('Static content directory not found: ' + StaticResourcePath);
-{$ELSE}
+    {$ELSE}
     Trace('Static content directory not found: ' + StaticResourcePath);
-{$ENDIF DARAJA_LOGGING}
+    {$ENDIF DARAJA_LOGGING}
 
     raise EWebComponentException.CreateFmt(
       'Static resource path not found (%s)',
@@ -204,14 +180,12 @@ begin
   begin
     Response.ResponseNo := 404;
 
-{$IFDEF DARAJA_LOGGING}
+    {$IFDEF DARAJA_LOGGING}
     Logger.Warn('Resource not found: ' + RelFileName);
-{$ELSE}
+    {$ELSE}
     Trace('Resource not found: ' + RelFileName);
-{$ENDIF DARAJA_LOGGING}
-
+    {$ENDIF DARAJA_LOGGING}
   end;
 end;
 
 end.
-

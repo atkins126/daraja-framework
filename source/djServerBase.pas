@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,18 +30,26 @@ unit djServerBase;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djInterfaces, djServerContext, djHandlerWrapper,
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   djLogAPI, djLoggerFactory,
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
   djTypes;
 
 type
+  { TdjServerBase }
+
   (**
-   * Server Base.
+   * Base server implementation providing core HTTP server functionality.
+   *
+   * This class serves as a foundation for HTTP servers in the Daraja framework,
+   * implementing both IHandlerContainer and basic request handling capabilities.
+   *
+   * @sa IHandlerContainer
+   * @sa TdjHandlerWrapper
    *)
   TdjServerBase = class(TdjHandlerWrapper, IHandlerContainer)
   private
@@ -51,45 +59,35 @@ type
 
     procedure Trace(const S: string);
 
+  protected
+    // TdjLifeCycle overrides
+    (**
+     * Start the server.
+     *
+     * @note This method calls the inherited implementation and logs the server start.
+     * @throws EWebComponentException if the server fails to start
+     *)
+    procedure DoStart; override;
+    (**
+     * Stop the server.
+     *
+     * @note This method calls the inherited implementation and logs the server stop.
+     * @throws EWebComponentException if the server fails to stop cleanly
+     *)
+    procedure DoStop; override;
+  protected
+    // IHandler interface
+    procedure Handle(const Target: string; Context: TdjServerContext; Request:
+      TdjRequest; Response: TdjResponse); override;
   public
     (**
      * Create a ServerBase instance.
      *)
     constructor Create; override;
-
     (**
      * Destructor.
      *)
     destructor Destroy; override;
-
-    // IHandler interface
-
-    (**
-     * Handle a HTTP request.
-     *
-     * \param Target Request target
-     * \param Context HTTP server context
-     * \param Request HTTP request
-     * \param Response HTTP response
-     * \throws EWebComponentException if an exception occurs that interferes with the component's normal operation
-     *
-     * \sa IHandler
-     *)	
-    procedure Handle(const Target: string; Context: TdjServerContext; Request:
-      TdjRequest; Response: TdjResponse); override;
-
-    // ILifeCycle interface
-
-    (**
-     * Start the server.
-     *)
-    procedure DoStart; override;
-
-    (**
-     * Stop the server.
-     *)
-    procedure DoStop; override;
-
   end;
 
 implementation

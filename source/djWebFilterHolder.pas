@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,7 +30,7 @@ unit djWebFilterHolder;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djWebFilter, djGenericHolder, djServerContext, djWebFilterConfig,
@@ -41,12 +41,14 @@ uses
   Classes, Generics.Collections;
 
 type
-  (**
-   * Holds a WebFilter and configuration data.
-   *)
-
   { TdjWebFilterHolder }
 
+  (**
+   * A generic holder class for managing instances of TdjWebFilter.
+   *
+   * This class is a specialization of TdjGenericHolder, designed to hold and manage
+   * objects of type TdjWebFilter.
+   *)
   TdjWebFilterHolder = class(TdjGenericHolder<TdjWebFilter>)
   private
     {$IFDEF DARAJA_LOGGING}
@@ -55,35 +57,45 @@ type
     FConfig: IWebFilterConfig;
     FClass: TdjWebFilterClass;
     FWebFilter: TdjWebFilter;
+
     function GetClass: TdjWebFilterClass;
     procedure Trace(const S: string);
+  protected
+    // TdjLifeCycle overrides
+    procedure DoStart; override;
+    procedure DoStop; override;
   public
+    (**
+     * Constructor for creating an instance of TdjWebFilterHolder.
+     *
+     * @param WebFilterClass The class reference of type TdjWebFilterClass used to initialize the web filter holder.
+     *)
     constructor Create(WebFilterClass: TdjWebFilterClass);
     destructor Destroy; override;
 
     (**
      * Set the context.
      *
-     * \param Context the Web Filter context
+     * @param Context the Web Filter context
      *)
     procedure SetContext(const Context: IContext);
 
     (**
      * Set initialization parameter.
      *
-     * \param Key init parameter name
-     * \param Value init parameter value
+     * @param Key init parameter name
+     * @param Value init parameter value
      *)
     procedure SetInitParameter(const Key: string; const Value: string);
 
     (**
-     * Start the filter.
+     * Executes the filter logic for the given server context, request, and response.
+     *
+     * @param Context The server context in which the filter is executed.
+     * @param Request The HTTP request being processed.
+     * @param Response The HTTP response to be sent back to the client.
+     * @param Chain The filter chain to pass control to the next filter in the chain.
      *)
-    procedure DoStart; override;
-    (**
-     * Stop the filter.
-     *)
-     procedure DoStop; override;
      procedure DoFilter(Context: TdjServerContext;
        Request: TdjRequest; Response: TdjResponse;
        const Chain: IWebFilterChain);
@@ -100,9 +112,13 @@ type
 
   // note Delphi 2009 AVs if it is a TObjectList<>
   // see http://stackoverflow.com/questions/289825/why-is-tlist-remove-producing-an-eaccessviolation-error
-  // for a workaround
-  // use  TdjWeFilterHolders.Create(TComparer<TdjWebFilterHolder>.Default);
-  TdjWebFilterHolders = class(TObjectList<TdjWebFilterHolder>);
+  // for a workaround use TdjWeFilterHolders.Create(TComparer<TdjWebFilterHolder>.Default);
+  (**
+   * A generic list of TdjWebFilterHolder objects.
+   *)
+  TdjWebFilterHolders = class(TObjectList<TdjWebFilterHolder>)
+    // pas2dox requires the class declaration to use the end; statement
+  end;
 
 implementation
 
@@ -118,7 +134,6 @@ begin
   FConfig := TdjWebFilterConfig.Create;
   FClass := WebFilterClass;
 
-  // logging -----------------------------------------------------------------
   {$IFDEF DARAJA_LOGGING}
   Logger := TdjLoggerFactory.GetLogger('dj.' + TdjWebFilterHolder.ClassName);
   {$ENDIF DARAJA_LOGGING}

@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,14 +14,14 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
     a commercial license. Buying such a license is mandatory as soon as you
     develop commercial activities involving the Daraja framework without
     disclosing the source code of your own applications. These activities
-    include: offering paid services to customers as an ASP, shipping Daraja 
+    include: offering paid services to customers as an ASP, shipping Daraja
     with a closed source product.
 
 *)
@@ -30,7 +30,7 @@ unit djWebComponentHandler;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djInterfaces, djAbstractHandler, djWebComponent, djServerContext,
@@ -44,6 +44,7 @@ uses
   Generics.Collections;
 
 type
+  { TdjWebComponentHandler }
 
   (**
    * Web Component handler.
@@ -53,9 +54,6 @@ type
    * It holds a list of web components and their path mappings,
    * and passes incoming requests to the matching web component.
    *)
-
-  { TdjWebComponentHandler }
-
   TdjWebComponentHandler = class(TdjAbstractHandler)
   private
     {$IFDEF DARAJA_LOGGING}
@@ -79,9 +77,9 @@ type
     procedure Trace(const S: string);
     function StripContext(const Doc: string): string;
     procedure CheckUniqueName(Holder: TdjWebComponentHolder);
-    procedure CreateOrUpdateMapping(const PathSpec: string; Holder:
+    procedure CreateOrUpdateMapping(const UrlPattern: string; Holder:
       TdjWebComponentHolder);
-    procedure ValidateMappingPathSpec(const PathSpec: string;
+    procedure ValidateMappingUrlPattern(const UrlPattern: string;
       Holder: TdjWebComponentHolder);
     function FindMapping(const WebComponentName: string): TdjWebComponentMapping; // overload;
     function GetFilterChain(const PathInContext: string; Request: TdjRequest;
@@ -94,85 +92,105 @@ type
     // properties
     property WebComponentContext: IContext read FWebComponentContext;
     property WebComponentMappings: TdjWebComponentMappings read FWebComponentMappings;
-
-
   protected
+    // TdjLifeCycle overrides
+    (**
+     * Starts the web component handler.
+     * This method is called to initialize and start the handler.
+     *)
+    procedure DoStart; override;
+    (**
+     * Stops the web component handler.
+     * This method is called to clean up and stop the handler.
+     *)
+    procedure DoStop; override;
+  protected
+    (**
+     * Finds a web component holder by its target identifier.
+     *
+     * @param ATarget The identifier of the target component to find.
+     * @return A TdjWebComponentHolder instance representing the found component, or nil if not found.
+     *)
     function FindComponent(const ATarget: string): TdjWebComponentHolder;
+
+    (**
+     * Adds a new web component mapping to the handler.
+     *
+     * @param Mapping The TdjWebComponentMapping instance to be added.
+     *)
     procedure AddMapping(Mapping: TdjWebComponentMapping);
 
     property WebComponents: TdjWebComponentHolders read FWebComponentHolders;
     property WebFilters: TdjWebFilterHolders read FWebFilterHolders;
-
+  protected
+    // IHandler interface
+    procedure Handle(const Target: string; Context: TdjServerContext; Request:
+      TdjRequest; Response: TdjResponse); override;
   public
     constructor Create; override;
     destructor Destroy; override;
 
+    (**
+     * Sets the context for the component handler.
+     *
+     * @param Context The context to be set, implementing the IContext interface.
+     *)
     procedure SetContext(const Context: IContext);
 
     (**
      * Add a Web Component.
      *
-     * \param ComponentClass WebComponent class
-     * \param PathSpec path specification
+     * @param ComponentClass WebComponent class
+     * @param UrlPattern path specification
      *
-     * \throws EWebComponentException if the Web Component can not be added
+     * @throws EWebComponentException if the Web Component can not be added
      *)
     function AddWebComponent(ComponentClass: TdjWebComponentClass;
-      const PathSpec: string): TdjWebComponentHolder; overload;
+      const UrlPattern: string): TdjWebComponentHolder; overload;
 
     (**
      * Add a Web Component holder with mapping.
      *
-     * \param Holder a Web Component holder
-     * \param PathSpec a path spec
+     * @param Holder a Web Component holder
+     * @param UrlPattern a path spec
      *)
-    procedure AddWithMapping(Holder: TdjWebComponentHolder; const PathSpec: string); overload;
+    procedure AddWithMapping(Holder: TdjWebComponentHolder; const UrlPattern: string); overload;
 
     (**
      * Add a Web Filter, specifying a WebFilter class
      * and the mapped path.
      *
-     * \param FilterClass WebFilter class
-     * \param PathSpec mapped path
+     * @param Holder WebFilter holder
+     * @param UrlPattern mapped path
      *
-     * \throws Exception if the WebFilter can not be added
+     * @throws Exception if the WebFilter can not be added
      *)
-    procedure AddFilterWithMapping(Holder: TdjWebFilterHolder;
-      const PathSpec: string); overload;
+    procedure AddWebFilter(Holder: TdjWebFilterHolder;
+      const UrlPattern: string); overload;
 
     (**
      * Find a TdjWebComponentHolder for a WebComponentClass.
      *
-     * \param WebComponentClass the Web Component class
-     * \return a TdjWebComponentHolder with the WebComponentClass or nil
+     * @param WebComponentClass the Web Component class
+     * @return a TdjWebComponentHolder with the WebComponentClass or nil
      *         if the WebComponentClass is not registered
      *)
     function FindHolder(WebComponentClass: TdjWebComponentClass):
       TdjWebComponentHolder;
 
-    // IHandler interface
-
     (**
-     * Handle a HTTP request.
+     * Invokes a service for the specified web component.
      *
-     * \param Target Request target
-     * \param Context HTTP server context
-     * \param Request HTTP request
-     * \param Response HTTP response
-     * \throws EWebComponentException if an exception occurs that interferes with the component's normal operation
-     * \sa IHandler
+     * @param Comp The web component instance to handle.
+     * @param Context The server context in which the service is invoked.
+     * @param Request The incoming request to be processed.
+     * @param Response The outgoing response to be sent.
      *)
-    procedure Handle(const Target: string; Context: TdjServerContext; Request:
-      TdjRequest; Response: TdjResponse); override;
-
     class procedure InvokeService(Comp: TdjWebComponent; Context: TdjServerContext;
       Request: TdjRequest; Response: TdjResponse);
-
-    // ILifeCycle interface
-    procedure DoStart; override;
-    procedure DoStop; override;
-
   end;
+
+{$IFNDEF DOXYGEN_SKIP}
 
 implementation
 
@@ -292,11 +310,11 @@ begin
 end;
 
 function TdjWebComponentHandler.AddWebComponent(ComponentClass: TdjWebComponentClass;
-  const PathSpec: string): TdjWebComponentHolder;
+  const UrlPattern: string): TdjWebComponentHolder;
 begin
   Result := TdjWebComponentHolder.Create(ComponentClass);
   try
-    AddWithMapping(Result, PathSpec);
+    AddWithMapping(Result, UrlPattern);
   except
     on E: EWebComponentException do
     begin
@@ -307,12 +325,10 @@ begin
   end;
 end;
 
-// ILifeCycle
-
 procedure TdjWebComponentHandler.DoStart;
 var
   FH: TdjWebFilterHolder;
-  H: TdjWebComponentHolder;
+  CH: TdjWebComponentHolder;
 begin
   inherited;
 
@@ -325,25 +341,25 @@ begin
     FH.Start;
   end;
 
-  for H in WebComponents do
+  for CH in WebComponents do
   begin
-    H.Start;
+    CH.Start;
   end;
 end;
 
 procedure TdjWebComponentHandler.DoStop;
 var
-  FilterHolder: TdjWebFilterHolder;
-  H: TdjWebComponentHolder;
+  FH: TdjWebFilterHolder;
+  CH: TdjWebComponentHolder;
 begin
-  for FilterHolder in WebFilters do
+  for FH in WebFilters do
   begin
-    FilterHolder.Stop;
+    FH.Stop;
   end;
 
-  for H in WebComponents do
+  for CH in WebComponents do
   begin
-    H.Stop;
+    CH.Stop;
   end;
 
   inherited;
@@ -365,13 +381,13 @@ begin
   end;
 end;
 
-procedure TdjWebComponentHandler.CreateOrUpdateMapping(const PathSpec: string;
+procedure TdjWebComponentHandler.CreateOrUpdateMapping(const UrlPattern: string;
   Holder: TdjWebComponentHolder);
 var
   Mapping: TdjWebComponentMapping;
   WebComponentName: string;
 begin
-  ValidateMappingPathSpec(PathSpec, Holder);
+  ValidateMappingUrlPattern(UrlPattern, Holder);
 
   // check if this Web Component is already mapped
   WebComponentName := Holder.Name;
@@ -382,7 +398,7 @@ begin
   begin
     // already mapped
     Trace(Format(rsUpdateMappingForWebComponent,
-      [WebComponentName, Trim(Mapping.PathSpecs.CommaText), PathSpec]));
+      [WebComponentName, Trim(Mapping.UrlPatterns.CommaText), UrlPattern]));
   end
   else
   begin
@@ -394,29 +410,29 @@ begin
 
     Trace(Format(rsCreateMappingForWebComponent,
     [Mapping.WebComponentName,
-    Trim(PathSpec)]));
+    Trim(UrlPattern)]));
   end;
 
-  // in both cases, add PathSpec
-  Mapping.PathSpecs.Add(PathSpec);
+  // in both cases, add URL pattern
+  Mapping.UrlPatterns.Add(UrlPattern);
 end;
 
 procedure TdjWebComponentHandler.CheckUniqueName(Holder: TdjWebComponentHolder);
 var
-  I: Integer;
+  CH: TdjWebComponentHolder;
   Msg: string;
 begin
   // fail if there is a different Holder with the same name
-  for I := 0 to WebComponents.Count - 1 do
+  for CH in WebComponents do
   begin
-    if (WebComponents[I].Name = Holder.Name) then
+    if (CH.Name = Holder.Name) then
     begin
       Msg := Format(
         rsTheWebComponentSCanNotBeAddedBecauseClassSIsAlr,
-        [Holder.Name, WebComponents[I].WebComponentClass.ClassName]);
+        [Holder.Name, CH.WebComponentClass.ClassName]);
       Trace(Msg);
 
-      raise EWebComponentException.Create(Msg);
+      raise EWebComponentException.Create(Msg); // todo test
     end;
   end;
 end;
@@ -427,15 +443,20 @@ begin
 end;
 
 procedure TdjWebComponentHandler.AddWithMapping(Holder: TdjWebComponentHolder;
-  const PathSpec: string);
+  const UrlPattern: string);
 begin
   try
-    FPathMap.CheckExists(PathSpec);
+    FPathMap.CheckExists(UrlPattern);
   except
     on E: EWebComponentException do
     begin
       Trace(E.Message);
-      raise;
+
+      raise EWebComponentException.CreateFmt(
+        'Web Component %s is already installed in context %s with URL pattern %s',
+        [Holder.WebComponentClass.ClassName, Holder.GetContext.GetContextPath,
+         UrlPattern]
+        );
     end;
   end;
 
@@ -460,10 +481,10 @@ begin
   end;
 
   // create or update a mapping entry
-  CreateOrUpdateMapping(PathSpec, Holder);
+  CreateOrUpdateMapping(UrlPattern, Holder);
 
-  // add the PathSpec to the FPathMap
-  FPathMap.AddPathSpec(PathSpec, Holder);
+  // add the URL pattern to the FPathMap
+  FPathMap.AddUrlPattern(UrlPattern, Holder);
 
   if Started and not Holder.IsStarted then
   begin
@@ -471,8 +492,8 @@ begin
   end;
 end;
 
-procedure TdjWebComponentHandler.AddFilterWithMapping(
-  Holder: TdjWebFilterHolder; const PathSpec: string);
+procedure TdjWebComponentHandler.AddWebFilter(
+  Holder: TdjWebFilterHolder; const UrlPattern: string);
 var
   Mapping: TdjWebFilterMapping;
 begin
@@ -485,7 +506,7 @@ begin
   Mapping := TdjWebFilterMapping.Create;
   Mapping.WebFilterHolder := Holder;
   Mapping.WebFilterName := Holder.Name;
-  Mapping.PathSpecs.Add(PathSpec);
+  Mapping.UrlPatterns.Add(UrlPattern);
 
   FWebFilterMappings.Add(Mapping);
 end;
@@ -497,13 +518,13 @@ begin
 end;
 
 procedure TdjWebComponentHandler.InitializeHolders(Holders: TdjWebFilterHolders);
-var
-  Holder: TdjWebFilterHolder;
+//var
+//  Holder: TdjWebFilterHolder;
 begin
-  for Holder in Holders do
-  begin
-    // already set. Holder.SetContext(WebComponentContext);
-  end;
+//  for Holder in Holders do
+//  begin
+//    // already set. Holder.SetContext(WebComponentContext);
+//  end;
 end;
 
 function TdjWebComponentHandler.StripContext(const Doc: string): string;
@@ -527,13 +548,13 @@ begin
   {$ENDIF DARAJA_LOGGING}
 end;
 
-procedure TdjWebComponentHandler.ValidateMappingPathSpec(const PathSpec: string;
+procedure TdjWebComponentHandler.ValidateMappingUrlPattern(const UrlPattern: string;
   Holder: TdjWebComponentHolder);
 begin
-  if TdjPathMap.GetSpecType(PathSpec) = stUnknown then
+  if TdjPathMap.GetSpecType(UrlPattern) = stUnknown then
   begin
     raise EWebComponentException.CreateFmt(
-      rsInvalidMappingSForWebComponentS, [PathSpec, Holder.Name]);
+      rsInvalidMappingSForWebComponentS, [UrlPattern, Holder.Name]);
   end;
 end;
 
@@ -575,15 +596,15 @@ end;
 
 function TdjWebComponentHandler.FindHolder(WebComponentClass: TdjWebComponentClass): TdjWebComponentHolder;
 var
-  I: Integer;
+  CH: TdjWebComponentHolder;
 begin
   Result := nil;
 
-  for I := 0 to WebComponents.Count - 1 do
+  for CH in WebComponents do
   begin
-    if WebComponents[I].WebComponentClass = WebComponentClass then
+    if CH.WebComponentClass = WebComponentClass then
     begin
-      Result := WebComponents[I];
+      Result := CH;
       Break;
     end;
   end;
@@ -788,7 +809,7 @@ begin
     // if = nil ...
     FilterMapping.WebFilterHolder := WebFilterHolder;
 
-    if FilterMapping.PathSpecs.Count > 0 then
+    if FilterMapping.UrlPatterns.Count > 0 then
     begin
       FWebFilterPathMappings.Add(FilterMapping);
     end;
@@ -803,6 +824,8 @@ begin
     end;
   end;
 end;
+
+{$ENDIF DOXYGEN_SKIP}
 
 end.
 

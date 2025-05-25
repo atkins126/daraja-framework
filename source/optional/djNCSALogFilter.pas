@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,8 +30,6 @@ unit djNCSALogFilter;
 
 interface
 
-{$i IdCompilerDefines.inc}
-
 uses
   djWebFilter, djServerContext, djTypes, djInterfaces,
   {$IFDEF DARAJA_LOGGING}
@@ -43,16 +41,14 @@ uses
   SysUtils;
 
 type
+  { TdjNCSALogFilter }
+
   (**
    * Implements NCSA logging.
    *
-   * \sa https://en.wikipedia.org/wiki/Common_Log_Format
-   *
-   * \note This class is unsupported demonstration code.
+   * @sa https://en.wikipedia.org/wiki/Common_Log_Format
+   * @note This class is unsupported demonstration code.
    *)
-
-  { TdjNCSALogFilter }
-
   TdjNCSALogFilter = class(TdjWebFilter)
   private
     {$IFDEF DARAJA_LOGGING}
@@ -60,15 +56,7 @@ type
     {$ENDIF DARAJA_LOGGING}
     FS: TFormatSettings;
   public
-    procedure Init(const Config: IWebFilterConfig); override;
-
-    (**
-     * The doFilter method of the Filter is called by the container each time
-     * a request/response pair is passed through the chain due to a client
-     * request for a resource at the end of the chain.
-     * The FilterChain passed in to this method allows the Filter to pass on
-     * the request and response to the next entity in the chain.
-     *)
+    procedure Init; override;
     procedure DoFilter(Context: TdjServerContext; Request: TdjRequest; Response:
       TdjResponse; const Chain: IWebFilterChain); override;
   end;
@@ -107,9 +95,8 @@ end;
 
 { TdjNCSALogFilter }
 
-procedure TdjNCSALogFilter.Init(const Config: IWebFilterConfig);
+procedure TdjNCSALogFilter.Init;
 begin
-  // logging -----------------------------------------------------------------
   {$IFDEF DARAJA_LOGGING}
   Logger := TdjLoggerFactory.GetLogger('dj.' + TdjNCSALogFilter.ClassName);
   {$ENDIF DARAJA_LOGGING}
@@ -123,8 +110,6 @@ begin
   FS.DateSeparator := '/';
   FS.TimeSeparator := ':';
 end;
-
-{ TdjNCSALogFilter }
 
 procedure TdjNCSALogFilter.DoFilter;
 var

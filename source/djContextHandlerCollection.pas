@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,7 +30,7 @@ unit djContextHandlerCollection;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djHandlerList, djContextMap
@@ -38,6 +38,8 @@ uses
   ;
 
 type
+  { TdjContextHandlerCollection }
+
   (**
    * Multiple contexts may have the same context path and they are
    * called in order until one handles the request.
@@ -73,7 +75,6 @@ constructor TdjContextHandlerCollection.Create;
 begin
   inherited Create;
 
-  // logging -----------------------------------------------------------------
   {$IFDEF DARAJA_LOGGING}
   Logger := TdjLoggerFactory.GetLogger('dj.' + TdjContextHandlerCollection.ClassName);
   {$ENDIF DARAJA_LOGGING}
@@ -94,12 +95,12 @@ end;
 
 procedure TdjContextHandlerCollection.Trace(const S: string);
 begin
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   if Logger.IsTraceEnabled then
   begin
     Logger.Trace(S);
   end;
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 end;
 
 end.

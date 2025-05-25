@@ -1,6 +1,6 @@
 (*
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -13,7 +13,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
     You can be released from the requirements of the license by purchasing
     a commercial license. Buying such a license is mandatory as soon as you
@@ -41,13 +41,7 @@ type
   published
     procedure TestTwoEqualComponentsSucceeds;
 
-    procedure Test_Add_ClassWithSamePathSpecTwice_RaisesException;
-
-    procedure Test_AddWebComponent_ClassWithSamePathSpecTwice_RaisesException;
-
-    procedure Test_AddWebComponent_HolderWithSamePathSpecTwice_RaisesException;
-
-    procedure Test_AddWebComponent_Two_HoldersWithSamePathSpecTwice_RaisesException;
+    procedure Test_Add_ClassWithSameUrlPatternTwice_RaisesException;
 
     // todo: Test AddHandler / RemoveHandler
 
@@ -56,7 +50,7 @@ type
 implementation
 
 uses
-  djInterfaces, djWebAppContext, djWebComponentHolder, djTypes, djWebComponent,
+  djWebAppContext, djTypes, djWebComponent,
   SysUtils, Classes;
 
 type
@@ -81,108 +75,31 @@ var
 begin
   Context := TdjWebAppContext.Create('');
   try
-    Context.AddWebComponent(TExamplePage, '/a');
-    Context.AddWebComponent(TExamplePage, '/b');
+    Context.Add(TExamplePage, '/a');
+    Context.Add(TExamplePage, '/b');
   finally
     Context.Free;
   end;
 end;
 
-procedure TdjWebAppContextTests.Test_Add_ClassWithSamePathSpecTwice_RaisesException;
+procedure TdjWebAppContextTests.Test_Add_ClassWithSameUrlPatternTwice_RaisesException;
 var
   Context: TdjWebAppContext;
 begin
   Context := TdjWebAppContext.Create('foo');
 
   try
-    Context.AddWebComponent(TExamplePage, '/bar');
+    Context.Add(TExamplePage, '/qux');
 
     {$IFDEF FPC}
-    ExpectException(EWebComponentException, 'Mapping key exists');
+    ExpectException(EWebComponentException, 'Web Component TExamplePage is already installed in context foo with URL pattern /qux');
     {$ELSE}
     ExpectedException := EWebComponentException;
     {$ENDIF}
 
     // same path -> error
-    Context.AddWebComponent(TExamplePage, '/bar');
+    Context.Add(TExamplePage, '/qux');
 
-  finally
-    Context.Free;
-  end;
-end;
-
-procedure TdjWebAppContextTests.Test_AddWebComponent_ClassWithSamePathSpecTwice_RaisesException;
-var
-  Context: TdjWebAppContext;
-begin
-  Context := TdjWebAppContext.Create('foo');
-
-  try
-    Context.AddWebComponent(TExamplePage, '/bar');
-
-    {$IFDEF FPC}
-    ExpectException(EWebComponentException, 'Mapping key exists');
-    {$ELSE}
-    ExpectedException := EWebComponentException;
-    {$ENDIF}
-
-    // same path -> error
-    Context.AddWebComponent(TExamplePage, '/bar');
-
-  finally
-    Context.Free;
-  end;
-end;
-
-procedure TdjWebAppContextTests.Test_AddWebComponent_HolderWithSamePathSpecTwice_RaisesException;
-var
-  Context: TdjWebAppContext;
-  Holder: TdjWebComponentHolder;
-begin
-  Context := TdjWebAppContext.Create('foo');
-
-  try
-    Holder := TdjWebComponentHolder.Create(TExamplePage);
-    Context.AddWebComponent(Holder, '/bar');
-
-    {$IFDEF FPC}
-    ExpectException(EWebComponentException, 'Web Component TExamplePage is already installed in context foo');
-    {$ELSE}
-    ExpectedException := EWebComponentException;
-    {$ENDIF}
-
-    // same path -> error
-    Context.AddWebComponent(Holder, '/bar');
-
-  finally
-    Context.Free;
-  end;
-end;
-
-procedure TdjWebAppContextTests.Test_AddWebComponent_Two_HoldersWithSamePathSpecTwice_RaisesException;
-var
-  Context: TdjWebAppContext;
-  Holder1, Holder2: TdjWebComponentHolder;
-begin
-  Context := TdjWebAppContext.Create('foo');
-
-  try
-    Holder1 := TdjWebComponentHolder.Create(TExamplePage);
-    Holder2 := TdjWebComponentHolder.Create(TExamplePage);
-    Context.AddWebComponent(Holder1, '/bar');
-
-    {$IFDEF FPC}
-    ExpectException(EWebComponentException, 'Mapping key exists');
-    {$ELSE}
-    ExpectedException := EWebComponentException;
-    {$ENDIF}
-
-    // same path -> error
-    try
-      Context.AddWebComponent(Holder2, '/bar');
-    finally
-      Holder2.Free; // fix leak
-    end;
   finally
     Context.Free;
   end;

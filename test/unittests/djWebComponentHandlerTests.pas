@@ -1,6 +1,6 @@
 (*
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -13,7 +13,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
     You can be released from the requirements of the license by purchasing
     a commercial license. Buying such a license is mandatory as soon as you
@@ -53,7 +53,7 @@ implementation
 uses
   Classes, SysUtils,
   djWebComponentHolder, djWebComponent, djWebAppContext,
-  djWebComponentHandler, djInterfaces, djTypes;
+  djWebComponentHandler, djTypes;
 
 type
   TExamplePage = class(TdjWebComponent)
@@ -155,8 +155,8 @@ end;
 //      Handler.AddWithMapping(H1, '/a');
 //      Handler.AddWithMapping(H1, '/b');
 //
-//      CheckEquals(2, Handler.WebComponentMappings[0].PathSpecs.Count);
-//      CheckEquals('/a,/b', Handler.WebComponentMappings[0].PathSpecs.CommaText);
+//      CheckEquals(2, Handler.WebComponentMappings[0].UrlPatterns.Count);
+//      CheckEquals('/a,/b', Handler.WebComponentMappings[0].UrlPatterns.CommaText);
 //
 //    finally
 //      Handler.Free;

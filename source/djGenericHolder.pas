@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,23 +30,30 @@ unit djGenericHolder;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djLifeCycle,
   Classes;
 
 type
-  (**
-   * Holds a reference to a web component or web filter instance.
-   *)
-
   { TdjGenericHolder }
 
+  (**
+   * A generic holder class that manages objects of type T.
+   * 
+   * @tparam T A type parameter constrained to TInterfacedObject.
+   * @note This class inherits from TdjLifeCycle.
+   *)
   TdjGenericHolder<T: TInterfacedObject> = class(TdjLifeCycle)
   private
     FName: string;
   public
+    (**
+     * Constructor for creating an instance of the class.
+     *
+     * @param AClass The class type to be used for initialization.
+     *)
     constructor Create(AClass: TInterfacedClass); reintroduce;
     // properties
     property Name: string read FName write FName;

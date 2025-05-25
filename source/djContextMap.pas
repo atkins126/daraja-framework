@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,7 +30,7 @@ unit djContextMap;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djWebComponentContextHandler,
@@ -38,9 +38,11 @@ uses
 
 type
   (**
-   * A TContextMap holds a list of context names and their handlers.
+   * A TContextMap holds a map of context names and their handlers.
    *)
-  TdjContextMap = class(TObjectDictionary<string, TdjWebComponentContextHandler>);
+  TdjContextMap = class(TObjectDictionary<string, TdjWebComponentContextHandler>)
+    // pas2dox requires the class declaration to use the end; statement
+  end;
 
 implementation
 

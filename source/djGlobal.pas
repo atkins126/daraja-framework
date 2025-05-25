@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,12 +30,14 @@ unit djGlobal;
 
 interface
 
-{$i IdCompilerDefines.inc}
+{$IFNDEF DOXYGEN_SKIP}
+
+// {$i IdCompilerDefines.inc}
 
 const
-  DWF_SERVER_VERSION = '3.0-MS1';
+  DWF_SERVER_VERSION = '3.0.5-SNAPSHOT';
   DWF_SERVER_FULL_NAME = 'Daraja HTTP Framework ' + DWF_SERVER_VERSION;
-  DWF_SERVER_COPYRIGHT = 'Copyright (C) Michael Justin';
+  DWF_SERVER_COPYRIGHT = 'Copyright (c) Michael Justin';
 
 function HTMLEncode(const AData: string): string;
 
@@ -69,5 +71,7 @@ begin
   end;
   SetLength(Result, Pos - 1);
 end;
+
+{$ENDIF DOXYGEN_SKIP}
 
 end.

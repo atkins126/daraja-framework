@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,16 +30,15 @@ unit djTypes;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
-  {$IFDEF FPC}{$NOTES OFF}{$ENDIF}{$HINTS OFF}{$WARNINGS OFF}
-  IdCustomHTTPServer;
-  {$IFDEF FPC}{$ELSE}{$HINTS ON}{$WARNINGS ON}{$ENDIF}
+  IdCustomHTTPServer,
+  SysUtils, Generics.Collections;
 
 type
   (**
-   * \class TdjRequest
+   * @class TdjRequest
    *
    * HTTP request information.
    * Type alias for Indy class TIdHTTPRequestInfo.
@@ -47,12 +46,26 @@ type
   TdjRequest = TIdHTTPRequestInfo;
 
   (**
-   * \class TdjResponse
+   * @class TdjResponse
    *
    * HTTP response information.
    * Type alias for Indy class TIdHTTPResponseInfo.
-   *)  
+   *)
   TdjResponse = TIdHTTPResponseInfo;
+
+  (**
+   * @class EWebComponentException
+   *
+   * This exception is thrown if an error occurs that interferes with the component's normal operation.
+   *)
+  EWebComponentException = class(Exception);
+
+  (**
+   * @class TdjStrings
+   *
+   * This class holds a list of strings.
+   *)
+  TdjStrings = TList<string>;
 
 implementation
 

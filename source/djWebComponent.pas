@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,7 +30,7 @@ unit djWebComponent;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djGenericWebComponent, djServerContext,
@@ -40,27 +40,32 @@ uses
   djTypes;
 
 type
+  { TdjWebComponent }
+
   (**
    * A base class which can be subclassed to create a HTTP component
    * for a Web site.
    *
    * A subclass of TdjWebComponent must override at least one method, usually one of these:
-   * \li OnGet, if the web component supports HTTP GET requests
-   * \li OnPost, for HTTP POST requests
-   * \li OnPut, for HTTP PUT requests
-   * \li OnDelete, for HTTP DELETE requests
+   * @li OnGet, if the web component supports HTTP GET requests
+   * @li OnPost, for HTTP POST requests
+   * @li OnPut, for HTTP PUT requests
+   * @li OnDelete, for HTTP DELETE requests
    *)
   TdjWebComponent = class(TdjGenericWebComponent)
   private
     {$IFDEF DARAJA_LOGGING}
     Logger: ILogger;
-   {$ENDIF DARAJA_LOGGING}
+    {$ENDIF DARAJA_LOGGING}
 
     procedure DoCachedGet(Request: TdjRequest; Response: TdjResponse); virtual;
-
   protected
     (**
-     * Called by the server (via the service method) to allow a component to handle a DELETE request.
+     * Called by the server to handle a DELETE request.
+     *
+     * @param Request The HTTP request to process
+     * @param Response The HTTP response to fill
+     * @throws EWebComponentException if an exception occurs
      *)
     procedure OnDelete(Request: TdjRequest; Response: TdjResponse); virtual;
 
@@ -80,23 +85,39 @@ type
     procedure OnOptions(Request: TdjRequest; Response: TdjResponse); virtual;
 
     (**
-     * Called by the server (via the service method) to allow a component to handle a POST request.
+     * Called by the server to handle a POST request.
+     *
+     * @param Request The HTTP request to process
+     * @param Response The HTTP response to fill
+     * @throws EWebComponentException if an exception occurs
      *)
     procedure OnPost(Request: TdjRequest; Response: TdjResponse); virtual;
 
     (**
-     * Called by the server (via the service method) to allow a component to handle a PUT request.
+     * Called by the server to handle a PUT request.
+     *
+     * @param Request The HTTP request to process
+     * @param Response The HTTP response to fill
+     * @throws EWebComponentException if an exception occurs
      *)
     procedure OnPut(Request: TdjRequest; Response: TdjResponse); virtual;
 
     (**
-     * Called by the server (via the service method) to allow a component to handle a TRACE request.
+     * Called by the server to handle a TRACE request.
+     *
+     * @param Request The HTTP request to process
+     * @param Response The HTTP response to fill
+     * @throws EWebComponentException if an exception occurs
      *)
     procedure OnTrace(Request: TdjRequest; Response: TdjResponse); virtual;
 
     (**
-     * Called by the server (via the service method) to allow a component to handle a PATCH request.
-     * \sa http://tools.ietf.org/html/rfc5789
+     * Called by the server to handle a PATCH request.
+     *
+     * @param Request The HTTP request to process
+     * @param Response The HTTP response to fill
+     * @throws EWebComponentException if an exception occurs
+     * @sa http://tools.ietf.org/html/rfc5789
      *)
     procedure OnPatch(Request: TdjRequest; Response: TdjResponse); virtual;
 
@@ -109,35 +130,25 @@ type
      * browser and proxy caches work more effectively, reducing the load on
      * server and network resources.
      *
-     * \param Request HTTP request
-     * \return the last modified timestamp
+     * @param Request HTTP request
+     * @return the last modified timestamp
      *)
     function OnGetLastModified(Request: TdjRequest): TDateTime; virtual;
 
   public
     constructor Create;
-
     destructor Destroy; override;
 
-    (**
-     * Dispatches client requests to the protected service method.
-     *
-     * \note a custom Web Component should not override this method.
-     *
-     * \param Context HTTP server context
-     * \param Request HTTP request
-     * \param Response HTTP response
-     * \throws EWebComponentException if an exception occurs that interferes with the component's normal operation
-     *)
     procedure Service(Context: TdjServerContext; Request: TdjRequest; Response:
       TdjResponse); override;
-
   end;
 
   (**
    * Class reference to TdjWebComponent
    *)
   TdjWebComponentClass = class of TdjWebComponent;
+
+{$IFNDEF DOXYGEN_SKIP}
 
 implementation
 
@@ -157,17 +168,16 @@ constructor TdjWebComponent.Create;
 begin
   inherited Create;
 
-  // logging -----------------------------------------------------------------
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   Logger := TdjLoggerFactory.GetLogger('dj.' + TdjWebComponent.ClassName);
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 
-{$IFDEF LOG_CREATE}Trace('Created');{$ENDIF}
+  {$IFDEF LOG_CREATE}Trace('Created');{$ENDIF}
 end;
 
 destructor TdjWebComponent.Destroy;
 begin
-{$IFDEF LOG_DESTROY}Trace('Destroy');{$ENDIF}
+  {$IFDEF LOG_DESTROY}Trace('Destroy');{$ENDIF}
 
   inherited;
 end;
@@ -282,12 +292,14 @@ begin
       end;
   else
     begin
-{$IFDEF DARAJA_LOGGING}
+        {$IFDEF DARAJA_LOGGING}
         Logger.Error('Unknown HTTP method');
-{$ENDIF DARAJA_LOGGING}
+        {$ENDIF DARAJA_LOGGING}
     end;
   end;
 end;
+
+{$ENDIF DOXYGEN_SKIP}
 
 end.
 

@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -40,23 +40,31 @@ uses
   Classes;
 
 type
-
   { TdjWebFilterChain }
 
+  (**
+   * Implements the IWebFilterChain interface to manage web filter chains.
+   *)
   TdjWebFilterChain = class(TInterfacedObject, IWebFilterChain)
   private
     {$IFDEF DARAJA_LOGGING}
     Logger: ILogger;
     {$ENDIF DARAJA_LOGGING}
-    procedure Trace(const S: string);
-  private
     FChain: IWebFilterChain;
     FHolder: TdjWebFilterHolder;
-  public
-    constructor Create(Holder: TdjWebFilterHolder; const FilterChain: IWebFilterChain);
 
+    procedure Trace(const S: string);
+  protected
+    // IWebFilterChain
     procedure DoFilter(Context: TdjServerContext; Request: TdjRequest; Response:
       TdjResponse);
+  public
+    (**
+     * Initializes a new instance of the TdjWebFilterChain class.
+     * @param Holder The holder object of type TdjWebFilterHolder.
+     * @param FilterChain The filter chain interface of type IWebFilterChain.
+     *)
+    constructor Create(Holder: TdjWebFilterHolder; const FilterChain: IWebFilterChain);
   end;
 
 implementation
@@ -68,7 +76,6 @@ constructor TdjWebFilterChain.Create(Holder: TdjWebFilterHolder;
 begin
   inherited Create;
 
-  // logging -----------------------------------------------------------------
   {$IFDEF DARAJA_LOGGING}
   Logger := TdjLoggerFactory.GetLogger('dj.' + TdjWebFilterChain.ClassName);
   {$ENDIF DARAJA_LOGGING}

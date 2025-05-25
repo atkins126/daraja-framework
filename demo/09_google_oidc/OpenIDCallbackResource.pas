@@ -1,7 +1,7 @@
 ﻿(*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -45,7 +45,7 @@ type
     OpenIDParams: TOpenIDParams;
     RedirectURI: string;
   public
-    procedure Init(const Config: IWebComponentConfig); override;
+    procedure Init; override;
     procedure OnGet(Request: TdjRequest; Response: TdjResponse); override;
   end;
 
@@ -53,18 +53,33 @@ implementation
 
 uses
   {$IFDEF FPC}{$NOTES OFF}{$ENDIF}{$HINTS OFF}{$WARNINGS OFF}
-  IdHTTP,
+  IdHTTP, IdSSLOpenSSL, IdSSLOpenSSLHeaders,
   {$IFDEF FPC}{$ELSE}{$HINTS ON}{$WARNINGS ON}{$ENDIF}
   SysUtils, Classes;
 
 { TOpenIDCallbackResource }
 
-procedure TOpenIDCallbackResource.Init(const Config: IWebComponentConfig);
+procedure TOpenIDCallbackResource.Init;
 begin
-  inherited Init(Config);
-
   RedirectURI := Config.GetInitParameter('RedirectURI');
   OpenIDParams := LoadClientSecrets(Config.GetInitParameter('secret.file'));
+end;
+
+function CreateIdHTTPwithSSL12: TIdHTTP;
+var
+  IOHandler: TIdSSLIOHandlerSocketOpenSSL;
+begin
+  Result := TIdHTTP.Create;
+
+  IOHandler := TIdSSLIOHandlerSocketOpenSSL.Create(Result);
+  IOHandler.SSLOptions.SSLVersions := [sslvTLSv1_2];
+  Result.IOHandler := IOHandler;
+
+  {$IFDEF DARAJA_PROJECT_STAGE_DEVELOPMENT}
+  // Raw HTTP logging
+  Result.Intercept := TIdLogDebug.Create(Result);
+  TIdLogDebug(Result.Intercept).Active := True;
+  {$ENDIF DARAJA_PROJECT_STAGE_DEVELOPMENT}
 end;
 
 // https://openid.net/specs/openid-connect-core-1_0.html#AuthResponse
@@ -103,7 +118,7 @@ begin
 
     // exchange auth code for claims
     Params := TStringList.Create;
-    IdHTTP := TIdHTTP.Create;
+    IdHTTP := CreateIdHTTPwithSSL12;
     try
       Params.Values['code'] := AuthCode;
       Params.Values['client_id'] := OpenIDParams.client_id;

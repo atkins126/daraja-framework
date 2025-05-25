@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,16 +30,15 @@ unit djServerInterfaces;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djInterfaces;
 
 type
   (**
-   *  \interface IConnector
-   *
-   * IConnector interface.
+   * Interface for HTTP connectors.
+   * @interface IConnector
    *)
   IConnector = interface(ILifeCycle)
     ['{FB350435-6F29-4E28-8EBF-71F8A7FEB6E9}']
@@ -47,14 +46,17 @@ type
      * Set the port.
      *)
     procedure SetPort(Value: Integer);
+    
     (**
      * Set the host.
      *)
     procedure SetHost(const Value: string);
+    
     (**
      * Get the port.
      *)
     function GetPort: Integer;
+    
     (**
      * Get the host.
      *)

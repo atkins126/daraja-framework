@@ -1,0 +1,39 @@
+name: Generate Doxygen Docs
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'source/**/*.pas'
+  workflow_dispatch:
+
+jobs:
+  doxygen:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Doxygen via Chocolatey
+        run: choco install doxygen.install -y
+        
+      - name: Add Doxygen to PATH
+        run: echo "C:\\Program Files\\doxygen\\bin" >> $env:GITHUB_PATH
+
+      - name: Generate Doxygen documentation with pas2dox
+        run: doxygen make\\doxygen.cfg
+
+      - name: Upload Doxygen warnings
+        uses: actions/upload-artifact@v4
+        with:
+          name: doxygen-warnings
+          path: warnings.log
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/html
+          publish_branch: gh-pages
+          force_orphan: true

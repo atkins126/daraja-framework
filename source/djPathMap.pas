@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,14 +14,14 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
     a commercial license. Buying such a license is mandatory as soon as you
     develop commercial activities involving the Daraja framework without
     disclosing the source code of your own applications. These activities
-    include: offering paid services to customers as an ASP, shipping Daraja 
+    include: offering paid services to customers as an ASP, shipping Daraja
     with a closed source product.
 
 *)
@@ -30,13 +30,24 @@ unit djPathMap;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   Classes;
 
 type
-  TSpecType = (stUnknown, stExact, stPrefix, stSuffix, stDefault);
+  (**
+   * @enum TSpecType
+   * Declares the path specification types.
+   *)
+  TSpecType = (stUnknown,  //!< Unknown type
+               stExact,    //!< Exact match
+               stPrefix,   //!< Longest prefix match
+               stSuffix,   //!< Longest suffix match
+               stDefault   //!< Default
+              );
+
+  { TdjPathMap }
 
   (**
    * Holds all known web component mappings for a context.
@@ -46,75 +57,81 @@ type
    * Longest prefix match
    * Longest suffix match
    *)
-
-  { TdjPathMap }
-
   TdjPathMap = class(TStringList)
   protected
     (**
-     *
-     * \param Path the URL document path
-     * \param Spec the path specification (for example, '/*')
-     * \param SpecType the path specification type
-     * \return True if the Path mathes the Spec (with known SpecType)
+     * Matches a given URL document path against a specified path pattern.
+     * @param Path the URL document path
+     * @param Spec the path specification
+     * @param SpecType the path specification type
+     * @return True if the Path matches the Spec (with known SpecType)
      *)
     class function Matches(const Path, Spec: string; SpecType: TSpecType): Boolean; overload;
 
   public
     (**
-     * \param Spec the path specification (for example, '/*')
-     * \return the path specification type
+     * @param Spec the path specification
+     * @return the path specification type
      *)
     class function GetSpecType(const Spec: string): TSpecType;
 
+    (**
+     * Matches the given path against a specified pattern.
+     *
+     * @param Path The file or directory path to be checked.
+     * @param Spec The pattern or specification to match against.
+     * @return True if the path matches the specification, otherwise False.
+     *)
     class function Matches(const Path, Spec: string): Boolean; overload;
 
     (**
      * Check if a mapping path exists.
-     * This procedure throws a EWebComponentException if the PathSpec is already registered for this context.
+     * This procedure throws a EWebComponentException if the URL pattern is already registered for this context.
      *
-     * \param PathSpec a single component mapping path (for example, '*.html' or '/*')
-     * \throws EWebComponentException
+     * @param UrlPattern a single component mapping path
+     * @throws EWebComponentException
      *)
-    procedure CheckExists(const PathSpec: string);
+    procedure CheckExists(const UrlPattern: string);
 
     (**
      * Add a web component mapping.
      *
-     * \param PathSpec a single component mapping path (for example, '*.html' or '/*')
-     * \param Value the mapped web component
-     * \throws EWebComponentException
+     * @param UrlPattern a single component mapping path
+     * @param Value the mapped web component
+     * @throws EWebComponentException
      *)
-    procedure AddPathSpec(const PathSpec: string; Value: TObject); overload;
+    procedure AddUrlPattern(const UrlPattern: string; Value: TObject); overload;
 
     (**
      * Return all matching mappings for the given path.
      * The best match will be the first entry.
      *
-     * \param Path the URL path (without context), for example 'test.html'
-     * \result list of matching mappings
+     * @param Path the URL path (without context
+     * @result list of matching mappings
      *)
     function GetMatches(const Path: string): TStrings;
   end;
 
+{$IFNDEF DOXYGEN_SKIP}
+
 implementation
 
 uses
-  djInterfaces,
+  djTypes,
   SysUtils;
 
 { TdjPathMap }
 
-procedure TdjPathMap.AddPathSpec(const PathSpec: string; Value: TObject);
+procedure TdjPathMap.AddUrlPattern(const UrlPattern: string; Value: TObject);
 begin
-  CheckExists(PathSpec);
+  CheckExists(UrlPattern);
 
-  AddObject(PathSpec, Value);
+  AddObject(UrlPattern, Value);
 end;
 
-procedure TdjPathMap.CheckExists(const PathSpec: string);
+procedure TdjPathMap.CheckExists(const UrlPattern: string);
 begin
-  if IndexOf(PathSpec) > -1 then
+  if IndexOf(UrlPattern) > -1 then
   begin
     raise EWebComponentException.Create('Mapping key exists');
   end;
@@ -289,6 +306,8 @@ begin
     AddDefaultMatch;
   end;
 end;
+
+{$ENDIF DOXYGEN_SKIP}
 
 end.
 

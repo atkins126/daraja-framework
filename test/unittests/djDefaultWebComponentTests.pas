@@ -1,6 +1,6 @@
 (*
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -13,7 +13,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
     You can be released from the requirements of the license by purchasing
     a commercial license. Buying such a license is mandatory as soon as you
@@ -75,7 +75,6 @@ end;
 procedure TdjDefaultWebComponentTests.TestDefaultWebComponent;
 var
   Server: TdjServer;
-  Holder: TdjWebComponentHolder;
   Context: TdjWebAppContext;
 begin
   Server := TdjServer.Create;
@@ -84,8 +83,7 @@ begin
     Context := TdjWebAppContext.Create('test');
 
     // create example component and register it
-    Holder := TdjWebComponentHolder.Create(TExamplePage);
-    Context.AddWebComponent(Holder, '/index.html');
+    Context.AddWebComponent(TExamplePage, '/index.html');
 
     Server.Add(Context);
     Server.Start;
@@ -105,8 +103,7 @@ begin
     end;
 
     // create default web component and register it
-    Holder := TdjWebComponentHolder.Create(TdjDefaultWebComponent);
-    Context.AddWebComponent(Holder, '/');
+    Context.AddWebComponent(TdjDefaultWebComponent, '/');
 
     // test static
     CheckGETResponseEquals('staticcontent', '/test/static.html', '/test/static.html');
@@ -120,18 +117,15 @@ end;
 procedure TdjDefaultWebComponentTests.TestDefaultWebComponentInRootContext;
 var
   Server: TdjServer;
-  Holder: TdjWebComponentHolder;
   Context: TdjWebAppContext;
 begin
-
   Server := TdjServer.Create;
   try
     // create the 'test' context
     Context := TdjWebAppContext.Create('');
 
     // create example component and register it
-    Holder := TdjWebComponentHolder.Create(TExamplePage);
-    Context.AddWebComponent(Holder, '/index.html');
+    Context.AddWebComponent(TExamplePage, '/index.html');
 
     Server.Add(Context);
 
@@ -150,8 +144,7 @@ begin
     end;
 
     // create default web component and register it
-    Holder := TdjWebComponentHolder.Create(TdjDefaultWebComponent);
-    Context.AddWebComponent(Holder, '/');
+    Context.AddWebComponent(TdjDefaultWebComponent, '/');
 
     // test static
     CheckGETResponseEquals('staticcontent', '/static.html', '/static.html');
@@ -186,7 +179,7 @@ begin
     {$ELSE}
     // ExpectedException := EWebComponentException;
     {$ENDIF}
-    Context.AddWebComponent(Holder, '/');
+    Context.Add(Holder, '/');
 
     Server.Start;
 
@@ -206,7 +199,7 @@ begin
   try
     Context := TdjWebAppContext.Create('test');
     // add default web component
-    Context.AddWebComponent(TdjDefaultWebComponent, '/');
+    Context.Add(TdjDefaultWebComponent, '/');
 
     Server.Add(Context);
 

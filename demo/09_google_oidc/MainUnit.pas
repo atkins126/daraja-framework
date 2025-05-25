@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -47,7 +47,7 @@ uses
 procedure Demo;
 const
   // URI must match OAuth 2.0 settings in Google Cloud project
-  REDIRECT_URI = 'http://localhost/openidcallback';
+  REDIRECT_URI = 'http://127.0.0.1/openidcallback';
   // Must point to file downloaded from Google Cloud project
   SECRET_FILE = 'client_secret.json';
 var
@@ -56,18 +56,18 @@ var
   FilterHolder: TdjWebFilterHolder;
   Server: TdjServer;
 begin
-  OIDCCallbackHolder := TdjWebComponentHolder.Create(TOpenIDCallbackResource);
+  Context := TdjWebAppContext.Create('', True);
+
+  Context.Add(TRootResource, '/index.html');
+  
+  OIDCCallbackHolder := Context.AddWebComponent(TOpenIDCallbackResource, '/openidcallback');
   OIDCCallbackHolder.SetInitParameter('RedirectURI', REDIRECT_URI);
   OIDCCallbackHolder.SetInitParameter('secret.file', SECRET_FILE);
 
-  FilterHolder := TdjWebFilterHolder.Create(TOpenIDAuthFilter);
+  FilterHolder := Context.AddWebFilter(TOpenIDAuthFilter, '*.html');
   FilterHolder.SetInitParameter('RedirectURI', REDIRECT_URI);
 
-  Context := TdjWebAppContext.Create('', True);
-  Context.AddWebComponent(TRootResource, '/index.html');
-  Context.AddWebComponent(OIDCCallbackHolder, '/openidcallback');
-  Context.AddWebFilter(FilterHolder, '*.html');
-  Context.AddFilterWithMapping(TdjNCSALogFilter, '/*');
+  Context.Add(TdjNCSALogFilter, '/*');
 
   Server := TdjServer.Create(80);
   try
@@ -75,9 +75,9 @@ begin
       Server.Add(Context);
       Server.Start;
 
-      ShellExecute(0, 'open', PChar('http://localhost/index.html'), '', '', 0);
+      ShellExecute(0, 'open', PChar('http://127.0.0.1/index.html'), '', '', 0);
 
-      WriteLn('Server is running, launching http://localhost/index.html ...');
+      WriteLn('Server is running, launching http://127.0.0.1/index.html ...');
       WriteLn('Hit enter to terminate.');
     except
       on E: Exception do WriteLn(E.Message);

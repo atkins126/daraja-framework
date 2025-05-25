@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,71 +30,85 @@ unit djAbstractConnector;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djServerInterfaces, djInterfaces, djLifeCycle
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   ,djLogAPI, djLoggerFactory
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
   ;
 
 type
+  { TdjAbstractConnector }
+
   (**
-   * Abstract connector.
-   *
+   * Abstract connector class for handling incoming requests.
+   * This class provides the basic structure for connectors, including
+   * properties for host and port, and methods for starting and stopping
+   * the connector.
    *)
   TdjAbstractConnector = class(TdjLifeCycle, IConnector)
   private
-{$IFDEF DARAJA_LOGGING}
+    {$IFDEF DARAJA_LOGGING}
     Logger: ILogger;
-{$ENDIF DARAJA_LOGGING}
+    {$ENDIF DARAJA_LOGGING}
 
     FPort: Integer;
     FHost: string;
 
+    (**
+     * Log a trace message.
+     *
+     * @param S The message to log.
+     *)
     procedure Trace(const S: string);
 
     procedure SetPort(Value: Integer);
     procedure SetHost(const Value: string);
     function GetPort: Integer;
     function GetHost: string;
-
   protected
     (**
      * Handler for incoming requests.
      *)
     Handler: IHandler;
-
+  protected
+    // TdjLifeCycle overrides
+    (**
+     * Start the connector.
+     * This method is called to initialize and start the connector's operations.
+     *)
+    procedure DoStart; override;
+    (**
+     * Stop the connector.
+     * This method is called to terminate the connector's operations.
+     *)
+    procedure DoStop; override;
   public
     (**
-     * Create a connector.
+     * Constructor.
+     * Initializes the connector with the specified request handler.
      *
-     * The handler is a required argument. The connector will
-     * call the "Handle" method for incoming requests.
-     *
-     * \param Handler the request handler
+     * @param Handler The request handler. The connector will call the "Handle" method for incoming requests.
+     * @throws AssertionError if the handler is not assigned.
      *)
     constructor Create(const Handler: IHandler); reintroduce;
-
     (**
      * Destructor.
+     * Cleans up resources and ensures the connector is stopped before destruction.
      *)
     destructor Destroy; override;
 
-    (**
-     * Start the handler.
-     *)
-    procedure DoStart; override;
-
-    (**
-     * Stop the handler.
-     *)
-    procedure DoStop; override;
-
     // properties
-
+    (**
+     * The host address for the connector.
+     *)
     property Host: string read GetHost write SetHost;
+
+    (**
+     * The port number for the connector.
+     *)
     property Port: Integer read GetPort write SetPort;
   end;
 
@@ -112,9 +126,9 @@ begin
   Assert(Assigned(Handler), 'No handler assigned');
 
   // logging -----------------------------------------------------------------
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   Logger := TdjLoggerFactory.GetLogger('dj.' + TdjAbstractConnector.ClassName);
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 
   Trace('Configuring');
 
@@ -137,12 +151,12 @@ end;
 
 procedure TdjAbstractConnector.Trace(const S: string);
 begin
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   if Logger.IsTraceEnabled then
   begin
     Logger.Trace(S);
   end;
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 end;
 
 procedure TdjAbstractConnector.DoStart;

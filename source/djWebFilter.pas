@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,7 +30,7 @@ unit djWebFilter;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djGenericWebFilter
@@ -47,10 +47,10 @@ type
   TdjWebFilter = class(TdjGenericWebFilter)
   private
     {$IFDEF DARAJA_LOGGING}
-    {%H-}Logger: ILogger;
+    Logger: ILogger;
     {$ENDIF DARAJA_LOGGING}
   public
-
+    constructor Create;
   end;
 
   (**
@@ -58,7 +58,18 @@ type
    *)
   TdjWebFilterClass = class of TdjWebFilter;
 
-  implementation
+implementation
+
+{ TdjWebFilter }
+
+constructor TdjWebFilter.Create;
+begin
+  inherited Create;
+
+  {$IFDEF DARAJA_LOGGING}
+  Logger := TdjLoggerFactory.GetLogger('dj.' + TdjWebFilter.ClassName);
+  {$ENDIF DARAJA_LOGGING}
+end;
 
 end.
 

@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -59,10 +59,10 @@ var
 begin
   Context := TdjWebAppContext.Create('', True);
 
-  Context.AddWebComponent(TRootResource, '/index.html');
-  Context.AddWebComponent(TAuthResponseResource, REDIRECT_PATH);
-  Context.AddFilterWithMapping(TAuthFilter, '*.html');
-  Context.AddFilterWithMapping(TdjNCSALogFilter, '/*');
+  Context.Add(TRootResource, '/index.html');
+  Context.Add(TAuthResponseResource, REDIRECT_PATH);
+  Context.Add(TAuthFilter, '*.html');
+  Context.Add(TdjNCSALogFilter, '/*');
 
   Context.SetInitParameter('ClientID', CLIENT_ID);
   Context.SetInitParameter('RedirectURI', REDIRECT_URI);

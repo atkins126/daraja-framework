@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,7 +30,7 @@ unit djHandlerWrapper;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djAbstractHandlerContainer, djServerContext, djInterfaces,
@@ -42,12 +42,14 @@ uses
   IdCustomHTTPServer;
   {$IFDEF FPC}{$ELSE}{$HINTS ON}{$WARNINGS ON}{$ENDIF}
 
-(**
- * A HandlerWrapper acts as a IHandler but delegates the handle method
- * and life cycle events to a delegate.
- * This is primarily used to implement the Decorator pattern.
- *)
 type
+  { TdjHandlerWrapper }
+
+  (**
+   * A HandlerWrapper acts as a IHandler but delegates the handle method
+   * and life cycle events to a delegate.
+   * This is primarily used to implement the Decorator pattern.
+   *)
   TdjHandlerWrapper = class(TdjAbstractHandlerContainer)
   private
     {$IFDEF DARAJA_LOGGING}
@@ -59,69 +61,46 @@ type
     // getter / setter
     function GetHandler: IHandler;
     procedure SetHandler(const Value: IHandler);
-
     procedure Trace(const S: string);
-
   protected
     (**
      * Get a HTTP session.
      *)
     function GetSession(Context: TdjServerContext; Request: TdjRequest;
       Response: TdjResponse; const Create: Boolean): TIdHTTPSession;
-
+  protected
+    // TdjLifeCycle overrides
+    (**
+     * Start the handler.
+     * @sa TdjLifeCycle
+     *)
+    procedure DoStart; override;
+    (**
+     * Start the handler.
+     * @sa TdjLifeCycle
+     *)
+    procedure DoStop; override;
+  protected
+    // IHandler interface
+    procedure Handle(const Target: string; Context: TdjServerContext;
+      Request: TdjRequest; Response: TdjResponse); override;
   public
-    constructor Create; override;
-
-    // IHandlerContainer interface
-
+    // IHandlerContainer interface todo still public
     (**
      * Add a handler to the container.
      * This implementation of AddHandler calls SetHandler with the passed
      * handler. If this HandlerWrapper had a previous wrapped handler, then
      * it is passed to a call to AddHandler on the passed handler.
      *
-     * \param Handler the handler to be added
+     * @param Handler the handler to be added
      *)
     procedure AddHandler(const Handler: IHandler); override;
-
-    (**
-     * Remove a handler from the container.
-     *
-     * \param Handler the handler to be removed
-     *)
     procedure RemoveHandler(const Handler: IHandler); override;
-
-    // ILifeCycle interface
-
-    (**
-     * Start the handler.
-     *)
-    procedure DoStart; override;
-
-    (**
-     * Stop the handler.
-     *)
-    procedure DoStop; override;
-
-    // IHandler interface
-
-    (**
-     * Handle a HTTP request.
-     *
-     * \param Target Request target
-     * \param Context HTTP server context
-     * \param Request HTTP request
-     * \param Response HTTP response
-     * \throws EWebComponentException if an exception occurs that interferes with the component's normal operation
-     *
-     * \sa IHandler
-     *)
-    procedure Handle(const Target: string; Context: TdjServerContext;
-      Request: TdjRequest; Response: TdjResponse); override;
+  public
+    constructor Create; override;
 
     // properties
     property Handler: IHandler read GetHandler write SetHandler;
-
   end;
 
 implementation
@@ -214,7 +193,6 @@ begin
   begin
     raise Exception.Create('Can not remove handler');
   end;
-
 end;
 
 // IHandler
@@ -227,8 +205,6 @@ begin
     Handler.Handle(Target, Context, Request, Response);
   end;
 end;
-
-// ILifeCycle
 
 constructor TdjHandlerWrapper.Create;
 begin

@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -46,7 +46,7 @@ type
     TokenEndpoint: string;
     function GetAccessTokenByRefreshToken(const RefreshToken: string): string;
   public
-    procedure Init(const Config: IWebComponentConfig); override;
+    procedure Init; override;
     procedure OnGet(Request: TdjRequest; Response: TdjResponse); override;
     procedure OnPost(Request: TdjRequest; Response: TdjResponse); override;
   end;
@@ -60,7 +60,7 @@ type
     RedirectURI: string;
     function BuildCodeChallenge(const ACodeVerifier: string): string;
   public
-    procedure Init(const Config: IWebFilterConfig); override;
+    procedure Init; override;
     procedure DoFilter(Context: TdjServerContext; Request: TdjRequest;
       Response: TdjResponse; const Chain: IWebFilterChain); override;
   end;
@@ -104,10 +104,10 @@ var
 begin
   Context := TdjWebAppContext.Create('', True);
 
-  Context.AddWebComponent(TRootResource, RootResourcePath);
-  Context.AddWebComponent(TAuthResponseResource, RedirectPath);
-  Context.AddFilterWithMapping(TAuthFilter, '*.html');
-  Context.AddFilterWithMapping(TdjNCSALogFilter, '/*');
+  Context.Add(TRootResource, RootResourcePath);
+  Context.Add(TAuthResponseResource, RedirectPath);
+  Context.Add(TAuthFilter, '*.html');
+  Context.Add(TdjNCSALogFilter, '/*');
 
   Context.SetInitParameter('ClientID', ClientId);
   Context.SetInitParameter('RedirectURI', RedirectURI);
@@ -155,7 +155,7 @@ end;
 
 { TRootResource }
 
-procedure TRootResource.Init(const Config: IWebComponentConfig);
+procedure TRootResource.Init;
 begin
   ClientID := Config.GetContext.GetInitParameter('ClientID');
   TokenEndpoint := Config.GetContext.GetInitParameter('TokenEndpoint');
@@ -235,7 +235,7 @@ end;
 
 { TAuthFilter }
 
-procedure TAuthFilter.Init(const Config: IWebFilterConfig);
+procedure TAuthFilter.Init;
 begin
   AuthorizeEndpoint := Config.GetContext.GetInitParameter('AuthorizeEndpoint');
   ClientID := Config.GetContext.GetInitParameter('ClientID');

@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,7 +30,7 @@ unit djWebComponentHolders;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djWebComponentHolder,
@@ -44,16 +44,26 @@ type
 
   { TdjWebComponentHolders }
 
+  (**
+   * TdjWebComponentHolders is a class that manages a list of TdjWebComponentHolder objects.
+   * It inherits from TObjectList to provide functionality for handling collections of components.
+   *)
   TdjWebComponentHolders = class(TObjectList<TdjWebComponentHolder>)
   public
-    function Contains(WebComponentName: string): Boolean;
+    (**
+     * Checks if the specified web component name exists.
+     *
+     * @param WebComponentName The name of the web component to check.
+     * @return True if the web component name exists, otherwise False.
+     *)
+    function Contains(const WebComponentName: string): Boolean;
   end;
 
 implementation
 
 { TdjWebComponentHolders }
 
-function TdjWebComponentHolders.Contains(WebComponentName: string): Boolean;
+function TdjWebComponentHolders.Contains(const WebComponentName: string): Boolean;
 var
   Holder: TdjWebComponentHolder;
 begin

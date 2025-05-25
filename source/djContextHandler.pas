@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,14 +14,14 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
     a commercial license. Buying such a license is mandatory as soon as you
     develop commercial activities involving the Daraja framework without
     disclosing the source code of your own applications. These activities
-    include: offering paid services to customers as an ASP, shipping Daraja 
+    include: offering paid services to customers as an ASP, shipping Daraja
     with a closed source product.
 
 *)
@@ -30,7 +30,7 @@ unit djContextHandler;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djInterfaces, djServerContext, djContextConfig, djHandlerWrapper,
@@ -45,8 +45,13 @@ const
   WEBAPPS = 'webapps';
 
 type
+  { TdjContext }
+
   (**
-   * Context implementation.
+   * Handles requests within a specific context path.
+   * Manages initialization parameters and context configuration.
+   * @implements IContext
+   * @implements IWriteableConfig
    *)
   TdjContext = class(TInterfacedObject, IContext, IWriteableConfig)
   private
@@ -56,76 +61,38 @@ type
     FConfig: IContextConfig;
     FContextPath: string;
 
-    // IWriteableConfig
-    procedure Add(const Key: string; const Value: string);
-    procedure SetContext(const Context: IContext);
-
     (**
      * a-z A-Z 0-9 . - _ ~ ! $ & ' ( ) * + , ; = : @
      * and percent-encoded characters
      *)
     procedure ValidateContextPath(const ContextPath: string);
-
+  protected
+    // IWriteableConfig interface
+    procedure Add(const Key: string; const Value: string);
+    procedure SetContext(const Context: IContext);
+  protected
+    // IContext interface
+    procedure Init(const Config: IContextConfig);
+    function GetContextConfig: IContextConfig;
+    function GetContextPath: string;
+    function GetInitParameter(const Key: string): string;
+    function GetInitParameterNames: TdjStrings;
+    procedure Log(const Msg: string);
   public
     (**
-     * Create a context with the given path.
-     * \param ContextPath the context path
-     * \throws EWebComponentException if the conext name contains invalid
-     * characters
+     * Initializes a new context with the specified path.
+     *
+     * @param ContextPath The path for this context.
+     * @throws EWebComponentException If the context path contains invalid characters.
      *)
     constructor Create(const ContextPath: string);
-
-    (**
-     * Called by the container on start.
-     * \param Config the context configuration
-     *)
-    procedure Init(const Config: IContextConfig);
-
-    // IContext interface
-
-    (**
-     * Get the context configuration.
-     * \return the context configuration
-     *)
-    function GetContextConfig: IContextConfig;
-
-    (**
-     * Get the context path.
-     * \return the context path.
-     *)
-    function GetContextPath: string;
-
-    (**
-     * Get the init parameter with the given name.
-     * \param Key the parameter name
-     * \return the init parameter value
-     *)
-    function GetInitParameter(const Key: string): string;
-
-    (**
-     * Get the list of init parameter names.
-     * \return list of init parameter names.
-     *)
-    function GetInitParameterNames: TdjStrings;
-
-    (**
-     * Write a log message.
-     *
-     * \note if DARAJA_LOGGING is defined, it will write using the logging
-     * framework. Otherwise, it will log to console if System.IsConsole is True.
-     *
-     * \param Msg the log message.
-     *)
-    procedure Log(const Msg: string);
-
   end;
+
+  { TdjContextHandler }
 
   (**
    * Context handler.
    *)
-
-  { TdjContextHandler }
-
   TdjContextHandler = class(TdjHandlerWrapper)
   private
     {$IFDEF DARAJA_LOGGING}
@@ -138,31 +105,44 @@ type
     procedure Trace(const S: string);
     function GetContextPath: string;
     procedure SetErrorHandler(const Value: IHandler);
-
+  protected
+    // TdjLifeCycle overrides
+    (**
+     * Start the handler.
+     * @sa TdjLifeCycle
+     *)
+    procedure DoStart; override;
+    (**
+     * Start the handler.
+     * @sa TdjLifeCycle
+     *)
+    procedure DoStop; override;
+  protected
+    // IHandler interface
+    procedure Handle(const Target: string; Context: TdjServerContext;
+      Request: TdjRequest; Response: TdjResponse); override;
   protected
     (**
      * Check if the Document matches this context.
      *
-     * \param ConnectorName the connector name (like 'host:port'
-     * \param Target the target URL document
+     * @param ConnectorName the connector name (like 'host:port'
+     * @param Target the target URL document
      *
-     * \return True if the context matches the connector name and target URL document
+     * @return True if the context matches the connector name and target URL document
      *)
     function ContextMatches(const ConnectorName, Target: string): Boolean;
 
     (**
      * Creates connector name in the form 'host:port'
      *
-     * \returns connector name
+     * @returns connector name
      *)
     function ToConnectorName(Context: TdjServerContext): string;
-
   public
     (**
      * Create a ContextHandler.
      *)
     constructor Create(const ContextPath: string); reintroduce;
-
     (**
      * Destructor.
      *)
@@ -176,45 +156,15 @@ type
     (**
      * Set initialization parameter.
      *
-     * \param Key init parameter name
-     * \param Value init parameter value
+     * @param Key init parameter name
+     * @param Value init parameter value
      *)
     procedure SetInitParameter(const Key: string; const Value: string);
 
-    // ILifeCycle interface
-
-    (**
-     * Start the handler.
-     *)
-    procedure DoStart; override;
-
-    (**
-     * Stop the handler.
-     *)
-    procedure DoStop; override;
-
-    // IHandler interface
-
-    (**
-     * Handle a HTTP request.
-     *
-     * \param Target Request target
-     * \param Context HTTP server context
-     * \param Request HTTP request
-     * \param Response HTTP response
-     * \throws EWebComponentException if an exception occurs that interferes with the component's normal operation
-     *
-     * \sa IHandler
-     *)
-    procedure Handle(const Target: string; {%H-}Context: TdjServerContext;
-      {%H-}Request: TdjRequest; {%H-}Response: TdjResponse); override;
-
     // properties
-
     property ConnectorNames: TStrings read FConnectorNames;
     property ContextPath: string read GetContextPath;
     property ErrorHandler: IHandler read FErrorHandler write SetErrorHandler;
-
   end;
 
 implementation

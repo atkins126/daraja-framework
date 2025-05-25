@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,7 +30,7 @@ unit djHandlerList;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djServerContext, djHandlerCollection,
@@ -38,15 +38,15 @@ uses
   djTypes;
 
 type
+  { TdjHandlerList }
+
   (**
    * Iterates handler list and exits when the response code is set.
    * If the response code is still -1, it returns 404
    *
-
    * This extension of TdjHandlerCollection will call
    * each contained handler in turn until either an
    * exception is thrown or a positive response status is set.
-   *
    *)
   TdjHandlerList = class(TdjHandlerCollection)
   private
@@ -55,29 +55,15 @@ type
     {$ENDIF DARAJA_LOGGING}
 
     procedure Trace(const S: string);
-
+  protected
+    // IHandler interface
+    procedure Handle(const Target: string; Context: TdjServerContext;
+      Request: TdjRequest; Response: TdjResponse); override;
   public
     (**
      * Constructor.
      *)
     constructor Create; override;
-
-    // IHandler interface
-
-    (**
-     * Handle a HTTP request.
-     *
-     * \param Target Request target
-     * \param Context HTTP server context
-     * \param Request HTTP request
-     * \param Response HTTP response
-     * \throws EWebComponentException if an exception occurs that interferes with the component's normal operation
-     *
-     * \sa IHandler
-     *)
-    procedure Handle(const Target: string; Context: TdjServerContext;
-      Request: TdjRequest; Response: TdjResponse); override;
-
   end;
 
 implementation

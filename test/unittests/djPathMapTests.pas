@@ -1,6 +1,6 @@
 (*
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -13,7 +13,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
     You can be released from the requirements of the license by purchasing
     a commercial license. Buying such a license is mandatory as soon as you
@@ -41,11 +41,11 @@ type
   published
     procedure TestGetSpecType;
 
-    procedure TestPathSpec;
+    procedure TestUrlPattern;
 
-    procedure TestMorePathSpec;
+    procedure TestMoreUrlPattern;
 
-    procedure TestDirPathSpec;
+    procedure TestDirUrlPattern;
   end;
 
 implementation
@@ -89,7 +89,7 @@ begin
   CheckTrue(stUnknown = TTestPathMap.GetSpecType('/*.html'), '/*.html');
 end;
 
-procedure TdjPathMapTests.TestPathSpec;
+procedure TdjPathMapTests.TestUrlPattern;
 var
   PS: TdjPathMap;
 
@@ -106,14 +106,17 @@ begin
     default.
     *)
 
-    PS.AddPathSpec('/', nil);
-    PS.AddPathSpec('/foo/*', nil);
-    PS.AddPathSpec('/prefix/*', nil);
-    PS.AddPathSpec('/prefix/more/*', nil);
-    PS.AddPathSpec('/absolute.html', nil);
-    PS.AddPathSpec('/absolute2.html', nil);
-    PS.AddPathSpec('*.suf', nil);
-    PS.AddPathSpec('*.suffix', nil);
+    PS.AddUrlPattern('/', nil);
+    PS.AddUrlPattern('/foo/*', nil);
+    PS.AddUrlPattern('/prefix/*', nil);
+    PS.AddUrlPattern('/prefix/more/*', nil);
+    PS.AddUrlPattern('/absolute.html', nil);
+    PS.AddUrlPattern('/absolute2.html', nil);
+    PS.AddUrlPattern('*.suf', nil);
+    PS.AddUrlPattern('*.suffix', nil);
+    PS.AddUrlPattern('/app/*', nil);
+    PS.AddUrlPattern('/app/special/*', nil);
+
 
     MatchList := PS.GetMatches('/prefix/absolute.html');
     try
@@ -122,6 +125,29 @@ begin
       MatchList.Free;
     end;
 
+    // prefix matches
+    MatchList := PS.GetMatches('/foo/');
+    try
+      CheckEquals('/foo/*', Trim(MatchList.Text));
+    finally
+      MatchList.Free;
+    end;
+
+    MatchList := PS.GetMatches('/foo/bar');
+    try
+      CheckEquals('/foo/*', Trim(MatchList.Text));
+    finally
+      MatchList.Free;
+    end;
+
+    MatchList := PS.GetMatches('/foo/bar/baz');
+    try
+      CheckEquals('/foo/*', Trim(MatchList.Text));
+    finally
+      MatchList.Free;
+    end;
+
+    // no prefix match
     MatchList := PS.GetMatches('/foobar');
     try
       CheckEquals('/', Trim(MatchList.Text));
@@ -129,6 +155,15 @@ begin
       MatchList.Free;
     end;
 
+    // no prefix match
+    MatchList := PS.GetMatches('/bar/foo');
+    try
+      CheckEquals('/', Trim(MatchList.Text));
+    finally
+      MatchList.Free;
+    end;
+
+    // absolute match
     MatchList := PS.GetMatches('/absolute.html');
     try
       CheckEquals('/absolute.html', Trim(MatchList.Text));
@@ -136,6 +171,7 @@ begin
       MatchList.Free;
     end;
 
+    // suffix match
     MatchList := PS.GetMatches('/absolute.suf');
     try
       CheckEquals('*.suf', Trim(MatchList.Text));
@@ -143,6 +179,7 @@ begin
       MatchList.Free;
     end;
 
+    // suffix match
     MatchList := PS.GetMatches('/absolute.suffix');
     try
       CheckEquals('*.suffix', Trim(MatchList.Text));
@@ -150,10 +187,20 @@ begin
       MatchList.Free;
     end;
 
+    // longest match
     MatchList := PS.GetMatches('/prefix/more/absolute.html');
     try
       CheckEquals('/prefix/more/*', MatchList[0]);
       CheckEquals('/prefix/*', MatchList[1]);
+    finally
+      MatchList.Free;
+    end;
+
+    // longest match
+    MatchList := PS.GetMatches('/app/special/report');
+    try
+      CheckEquals('/app/special/*', MatchList[0]);
+      CheckEquals('/app/*', MatchList[1]);
     finally
       MatchList.Free;
     end;
@@ -168,19 +215,18 @@ begin
   finally
     PS.Free;
   end;
-
 end;
 
-procedure TdjPathMapTests.TestMorePathSpec;
+procedure TdjPathMapTests.TestMoreUrlPattern;
 var
   PS: TdjPathMap;
   MatchList: TStrings;
 begin
   PS := TdjPathMap.Create;
   try
-     PS.AddPathSpec('/*', nil);
+    PS.AddUrlPattern('/*', nil);
 
-     MatchList := PS.GetMatches('/something');
+    MatchList := PS.GetMatches('/something');
     try
       CheckEquals('/*', Trim(MatchList.Text));
     finally
@@ -191,29 +237,28 @@ begin
   end;
 end;
 
-procedure TdjPathMapTests.TestDirPathSpec;
+procedure TdjPathMapTests.TestDirUrlPattern;
 var
   PS: TdjPathMap;
   MatchList: TStrings;
 begin
   PS := TdjPathMap.Create;
   try
-     PS.AddPathSpec('/*', nil);
+    PS.AddUrlPattern('/*', nil);
 
-     MatchList := PS.GetMatches('/dir');
+    MatchList := PS.GetMatches('/dir');
     try
       CheckEquals('/*', Trim(MatchList.Text));
     finally
       MatchList.Free;
     end;
 
-     MatchList := PS.GetMatches('/dir/');
+    MatchList := PS.GetMatches('/dir/');
     try
       CheckEquals('/*', Trim(MatchList.Text));
     finally
       MatchList.Free;
     end;
-
   finally
     PS.Free;
   end;

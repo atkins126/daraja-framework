@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,20 +30,22 @@ unit djWebComponentMapping;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   Classes,
   Generics.Collections;
 
 type
+  { TdjWebComponentMapping }
+
   (**
    * Web Component Mapping.
    *)
   TdjWebComponentMapping = class(TObject)
   private
     FName: string;
-    FPathSpecs: TStrings;
+    FUrlPatterns: TStrings;
   public
     (**
      * Constructor.
@@ -56,7 +58,7 @@ type
 
     // properties
     property WebComponentName: string read FName write FName;
-    property PathSpecs: TStrings read FPathSpecs;
+    property UrlPatterns: TStrings read FUrlPatterns;
   end;
 
   (**
@@ -74,12 +76,12 @@ implementation
 
 constructor TdjWebComponentMapping.Create;
 begin
-  FPathSpecs := TStringList.Create;
+  FUrlPatterns := TStringList.Create;
 end;
 
 destructor TdjWebComponentMapping.Destroy;
 begin
-  FPathSpecs.Free;
+  FUrlPatterns.Free;
 
   inherited;
 end;

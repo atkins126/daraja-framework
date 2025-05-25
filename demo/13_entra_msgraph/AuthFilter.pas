@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -50,7 +50,7 @@ type
     RedirectURI: string;
     function BuildCodeChallenge(const ACodeVerifier: string): string;
   public
-    procedure Init(const Config: IWebFilterConfig); override;
+    procedure Init; override;
     procedure DoFilter(Context: TdjServerContext; Request: TdjRequest;
       Response: TdjResponse; const Chain: IWebFilterChain); override;
   end;
@@ -70,10 +70,8 @@ end;
 
 { TAuthFilter }
 
-procedure TAuthFilter.Init(const Config: IWebFilterConfig);
+procedure TAuthFilter.Init;
 begin
-  inherited;
-
   AuthorizeEndpoint := Config.GetContext.GetInitParameter('AuthorizeEndpoint');
   ClientID := Config.GetContext.GetInitParameter('ClientID');
   RedirectURI := Config.GetContext.GetInitParameter('RedirectURI');

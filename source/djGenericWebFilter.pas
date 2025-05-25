@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,7 +30,7 @@ unit djGenericWebFilter;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djInterfaces, djWebComponentConfig, djWebFilterConfig,
@@ -44,12 +44,14 @@ uses
   Classes;
 
 type
-  (**
-   * Defines a generic Web Filter.
-   *)
-
   { TdjGenericWebFilter }
 
+  (**
+   * A generic web filter class implementing the IWebFilter interface.
+   * 
+   * This class provides functionality to filter web requests or responses
+   * as part of the Daraja framework.
+   *)
   TdjGenericWebFilter = class(TInterfacedObject, IWebFilter)
   private
     {$IFDEF DARAJA_LOGGING}
@@ -58,25 +60,36 @@ type
     FConfig: IWebFilterConfig;
     procedure Trace(const S: string);
   public
+    // IWebFilter interface todo protected?
+    procedure Init(const Config: IWebFilterConfig); overload; virtual;
+    procedure DoFilter(Context: TdjServerContext; Request: TdjRequest; Response:
+      TdjResponse; const Chain: IWebFilterChain); virtual;
+    procedure DestroyFilter; virtual;
+  public
     (**
      * Constructor.
      *)
     constructor Create;
-
     (**
      * Destructor.
      *)
     destructor Destroy; override;
 
-    procedure Init(const Config: IWebFilterConfig); virtual;
+    (**
+     * A convenience method which can be overridden so that there is no need
+     * to call inherited Init(config).
+     *)
+    procedure Init; overload; virtual;
 
     (**
-     * The doFilter method of the Filter is called by the container each time a request/response pair is passed through the chain due to a client request for a resource at the end of the chain. The FilterChain passed in to this method allows the Filter to pass on the request and response to the next entity in the chain.
+     * Returns the configuration for this filter.
+     *
+     * @return The filter configuration object
+     * @throws EWebComponentException if the filter is not initialized
      *)
-    procedure DoFilter(Context: TdjServerContext; Request: TdjRequest; Response:
-      TdjResponse; const Chain: IWebFilterChain); virtual;
+    function GetWebFilterConfig: IWebFilterConfig;
 
-    procedure DestroyFilter; virtual;
+    property Config: IWebFilterConfig read GetWebFilterConfig;
   end;
 
 implementation
@@ -110,6 +123,13 @@ begin
   inherited;
 end;
 
+procedure TdjGenericWebFilter.Init;
+begin
+  Trace('Init');
+  // this is a convenience method which can be overridden so that there is no need
+  // to call inherited Init(config).
+end;
+
 procedure TdjGenericWebFilter.Init(const Config: IWebFilterConfig);
 begin
   Trace('Init');
@@ -120,6 +140,8 @@ begin
   Assert(not Assigned(FConfig));
 
   FConfig := Config;
+
+  Init;
 end;
 
 procedure TdjGenericWebFilter.Trace(const S: string);
@@ -141,6 +163,16 @@ begin
     Logger.Trace('DoFilter');
   end;
   {$ENDIF DARAJA_LOGGING}
+end;
+
+function TdjGenericWebFilter.GetWebFilterConfig: IWebFilterConfig;
+begin
+  if not Assigned(FConfig) then
+  begin
+    raise EWebComponentException.Create('Filter is not initialized.');
+  end;
+
+  Result := FConfig;
 end;
 
 procedure TdjGenericWebFilter.DestroyFilter;

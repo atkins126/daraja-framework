@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,36 +30,41 @@ unit djWebFilterMapping;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djWebFilterHolder,
   Classes, Generics.Collections;
 
 type
+  { TdjWebFilterMapping }
+
   (**
    * Web Filter Mapping.
    *)
-
-  { TdjWebFilterMapping }
-
   TdjWebFilterMapping = class(TObject)
   private
     FName: string;
-    FPathSpecs: TStrings;
+    FUrlPatterns: TStrings;
     FWebComponentNames: TStrings;
     FHolder: TdjWebFilterHolder;
   public
     constructor Create;
     destructor Destroy; override;
 
+    (**
+     * Determines whether the given path in the current context matches the criteria.
+     *
+     * @param PathInContext The path within the current context to evaluate.
+     * @return True if the path matches the criteria; otherwise, False.
+     *)
     function AppliesTo(const PathInContext: string): Boolean;
 
     // properties
     property WebFilterHolder: TdjWebFilterHolder read FHolder write FHolder;
     property WebFilterName: string read FName write FName;
     property WebComponentNames: TStrings read FWebComponentNames;
-    property PathSpecs: TStrings read FPathSpecs;
+    property UrlPatterns: TStrings read FUrlPatterns;
   end;
 
   (**
@@ -79,28 +84,28 @@ constructor TdjWebFilterMapping.Create;
 begin
   inherited;
 
-  FPathSpecs := TStringList.Create;
+  FUrlPatterns := TStringList.Create;
   FWebComponentNames := TStringList.Create;
 end;
 
 destructor TdjWebFilterMapping.Destroy;
 begin
   FWebComponentNames.Free;
-  FPathSpecs.Free;
+  FUrlPatterns.Free;
 
   inherited;
 end;
 
 function TdjWebFilterMapping.AppliesTo(const PathInContext: string): Boolean;
 var
-  PathSpec: string;
+  UrlPattern: string;
 begin
   Result := False;
-  if FPathSpecs.Count = 0 then
+  if FUrlPatterns.Count = 0 then
     Exit;
-  for PathSpec in PathSpecs do
+  for UrlPattern in UrlPatterns do
   begin
-    if TdjPathMap.Matches(PathInContext, PathSpec) then
+    if TdjPathMap.Matches(PathInContext, UrlPattern) then
     begin
       Result := True;
       Exit;

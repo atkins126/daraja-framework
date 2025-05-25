@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,70 +30,55 @@ unit djAbstractConfig;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
-  djInterfaces, djInitParameters;
+  djInterfaces, djTypes, djInitParameters;
 
 type
-  (**
-   * Generic configuration.
-   *)
-
   { TdjAbstractConfig }
 
-  TdjAbstractConfig = class(TInterfacedObject, IWriteableConfig)
+  (**
+   * Generic configuration class for managing initialization parameters and context.
+   * This class implements the IWriteableConfig interface and provides methods
+   * to add parameters, retrieve them, and manage the application context.
+   * @implements IWriteableConfig
+   *)
+  TdjAbstractConfig = class(TInterfacedObject, IWriteableConfig, IContextConfig)
   private
     (**
      * Initialization parameters.
      *)
     FParams: TdjInitParameters;
-
     (**
      * The context.
      *)
     FContext: IContext;
-
+  protected
+    // IWriteableConfig interface
+    procedure Add(const Key: string; const Value: string);
+    procedure SetContext(const Context: IContext);
+  protected
+    // IContextConfig interface todo more generic.
+    function GetInitParameter(const Key: string): string;
+    function GetInitParameterNames: TdjStrings;
   public
     (**
      * Constructor.
+     * Initializes the configuration object and allocates resources for parameters.
      *)
     constructor Create;
 
     (**
      * Destructor.
+     * Frees allocated resources and cleans up the configuration object.
      *)
     destructor Destroy; override;
 
     (**
-     * Add a configuration parameter.
+     * Get the current context.
      *
-     * \param Key key
-     * \param Value value
-     *)
-    procedure Add(const Key: string; const Value: string);
-
-    (**
-     * Set the context.
-     *
-     * \param Context the context
-     *)
-    procedure SetContext(const Context: IContext);
-
-    // IConfig interface
-
-    (**
-     * Get init parameter.
-     *)
-    function GetInitParameter(const Key: string): string;
-
-    (**
-     * Get init parameter names.
-     *)
-    function GetInitParameterNames: TdjStrings;
-
-    (**
-     * Get the context.
+     * @return The context associated with this configuration.
      *)
     function GetContext: IContext;
 

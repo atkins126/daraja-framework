@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,8 +30,6 @@ unit djStatisticsFilter;
 
 interface
 
-{$i IdCompilerDefines.inc}
-
 uses
   djWebFilter, djHandlerWrapper, djServerContext, djTypes, djInterfaces,
   {$IFDEF FPC}{$NOTES OFF}{$ENDIF}{$HINTS OFF}{$WARNINGS OFF}
@@ -39,10 +37,12 @@ uses
   {$IFDEF FPC}{$ELSE}{$HINTS ON}{$WARNINGS ON}{$ENDIF}
 
 type
+  { TdjStatisticsFilter }
+  
   (**
    * Collects HTTP request statistics.
    *
-   * \note This class is unsupported demonstration code.
+   * @note This class is unsupported demonstration code.
    *)
   TdjStatisticsFilter = class(TdjWebFilter)
   private
@@ -55,15 +55,6 @@ type
     FRequestsActive: TIdThreadSafeInt64;
     FRequests: TIdThreadSafeInt64;
 
-    //FRequestsDurationTotal: TIdThreadSafeInt64;
-    //FRequestsDurationMax: TIdThreadSafeCardinal;
-    //FRequestsDurationMin: TIdThreadSafeCardinal;
-
-    //function GetRequestsDurationAve: Integer;
-    //function GetRequestsDurationMax: Cardinal;
-    //function GetRequestsDurationMin: Cardinal;
-    //function GetRequestsDurationTotal: Int64;
-
     function GetRequests: Int64;
     function GetRequestsActive: Integer;
     function GetResponses1xx: Int64;
@@ -74,21 +65,9 @@ type
   public
     destructor Destroy; override;
 
-    procedure Init(const Config: IWebFilterConfig); override;
-    (**
-     * The doFilter method of the Filter is called by the container each time
-     * a request/response pair is passed through the chain due to a client
-     * request for a resource at the end of the chain.
-     * The FilterChain passed in to this method allows the Filter to pass on
-     * the request and response to the next entity in the chain.
-     *)
+    procedure Init; override;
     procedure DoFilter(Context: TdjServerContext; Request: TdjRequest; Response:
       TdjResponse; const Chain: IWebFilterChain); override;
-
-    //property RequestsDurationAve: Integer read GetRequestsDurationAve;
-    //property RequestsDurationTotal: Int64 read GetRequestsDurationTotal;
-    //property RequestsDurationMin: Cardinal read GetRequestsDurationMin;
-    //property RequestsDurationMax: Cardinal read GetRequestsDurationMax;
 
     property Requests: Int64 read GetRequests;
     property RequestsActive: Integer read GetRequestsActive;
@@ -112,8 +91,6 @@ uses
 
 procedure TdjStatisticsFilter.Init;
 begin
-  inherited;
-
   FResponses1xx := TIdThreadSafeInt64.Create;
   FResponses2xx := TIdThreadSafeInt64.Create;
   FResponses3xx := TIdThreadSafeInt64.Create;
@@ -122,10 +99,6 @@ begin
 
   FRequestsActive := TIdThreadSafeInt64.Create;
   FRequests := TIdThreadSafeInt64.Create;
-
-  //FRequestsDurationTotal := TIdThreadSafeInt64.Create;
-  //FRequestsDurationMax := TIdThreadSafeCardinal.Create;
-  //FRequestsDurationMin := TIdThreadSafeCardinal.Create;
 end;
 
 destructor TdjStatisticsFilter.Destroy;
@@ -139,10 +112,6 @@ begin
   FRequestsActive.Free;
   FRequests.Free;
 
-  //FRequestsDurationTotal.Free;
-  //FRequestsDurationMax.Free;
-  //FRequestsDurationMin.Free;
-
   inherited;
 end;
 
@@ -155,33 +124,6 @@ function TdjStatisticsFilter.GetRequestsActive: Integer;
 begin
   Result := FRequestsActive.Value;
 end;
-
-//function TdjStatisticsFilter.GetRequestsDurationAve: Integer;
-//begin
-//  if Requests = 0 then
-//  begin
-//    Result := 0;
-//  end
-//  else
-//  begin
-//    Result := Trunc(RequestsDurationTotal / Requests);
-//  end;
-//end;
-
-//function TdjStatisticsFilter.GetRequestsDurationMax: Cardinal;
-//begin
-//  Result := FRequestsDurationMax.Value;
-//end;
-//
-//function TdjStatisticsFilter.GetRequestsDurationMin: Cardinal;
-//begin
-//  Result := FRequestsDurationMin.Value;
-//end;
-//
-//function TdjStatisticsFilter.GetRequestsDurationTotal: Int64;
-//begin
-//  Result := FRequestsDurationTotal.Value;
-//end;
 
 function TdjStatisticsFilter.GetResponses1xx: Int64;
 begin
@@ -209,16 +151,11 @@ begin
 end;
 
 procedure TdjStatisticsFilter.DoFilter;
-//var
-//  Started: Cardinal;
-//  Elapsed: Cardinal;
   procedure SetSessionValue(const AKey: string; AValue: Integer);
   begin
     Request.Session.Content.Values['stats:' + AKey] := IntToStr(AValue);
   end;
 begin
-  //Started := djPlatform.GetTickCount;
-
   try
     SetSessionValue('requests', FRequests.Increment);
     SetSessionValue('requestsactive', FRequestsActive.Increment);
@@ -227,15 +164,6 @@ begin
 
   finally
     SetSessionValue('requestsactive', FRequestsActive.Decrement);
-
-    //Elapsed := GetTickDiff64(Started, djPlatform.GetTickCount);
-    //
-    //FRequestsDurationTotal.Value := FRequestsDurationTotal.Value + Elapsed;
-    //
-    //if Elapsed > FRequestsDurationMax.Value then
-    //  FRequestsDurationMax.Value := Elapsed;
-    //if (FRequestsDurationMin.Value = 0) or (Elapsed < FRequestsDurationMin.Value) then
-    //  FRequestsDurationMin.Value := Elapsed;
 
     case Trunc(Response.ResponseNo / 100) of
       1: SetSessionValue('responses1xx', FResponses1xx.Increment);

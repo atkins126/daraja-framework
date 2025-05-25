@@ -1,6 +1,6 @@
 (*
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -13,7 +13,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
     You can be released from the requirements of the license by purchasing
     a commercial license. Buying such a license is mandatory as soon as you
@@ -41,6 +41,7 @@ uses
   djDefaultWebComponent in '..\..\source\optional\djDefaultWebComponent.pas',
   djGenericHolder in '..\..\source\djGenericHolder.pas',
   djGenericWebComponent in '..\..\source\djGenericWebComponent.pas',
+  djGenericWebFilter in '..\..\source\djGenericWebFilter.pas',
   djGlobal in '..\..\source\djGlobal.pas',
   djHandlerCollection in '..\..\source\djHandlerCollection.pas',
   djHandlerList in '..\..\source\djHandlerList.pas',
@@ -81,7 +82,12 @@ uses
   TestFramework,
   GUITestRunner,
   TextTestRunner,
-  SysUtils;
+  SysUtils,
+  djWebFilter in '..\..\source\djWebFilter.pas',
+  djWebFilterChain in '..\..\source\djWebFilterChain.pas',
+  djWebFilterConfig in '..\..\source\djWebFilterConfig.pas',
+  djWebFilterHolder in '..\..\source\djWebFilterHolder.pas',
+  djWebFilterMapping in '..\..\source\djWebFilterMapping.pas';
 
 begin
   ConfigureLogging;

@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -50,7 +50,7 @@ begin
     Context.Add(TPingResource, '/ping');
     Server.Add(Context);
     Server.Start;
-    WriteLn('Server is running, please open http://localhost/');
+    WriteLn('Server is running, please open http://127.0.0.1/');
     WriteLn('Hit enter to terminate.');
     ReadLn;
   finally

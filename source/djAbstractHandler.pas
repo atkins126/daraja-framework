@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,59 +30,40 @@ unit djAbstractHandler;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djInterfaces, djLifeCycle, djServerContext,
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   djLogAPI, djLoggerFactory,
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
   djTypes;
 
 type
+  { TdjAbstractHandler }
+
   (**
    * AbstractHandler
    *)
   TdjAbstractHandler = class(TdjLifeCycle, IHandler)
   private
-{$IFDEF DARAJA_LOGGING}
+    {$IFDEF DARAJA_LOGGING}
     Logger: ILogger;
-{$ENDIF DARAJA_LOGGING}
-
+    {$ENDIF DARAJA_LOGGING}
     procedure Trace(const S: string);
-
+  protected
+    // TdjLifeCycle overrides
+    procedure DoStart; override;
+    procedure DoStop; override;
+  protected
+    // IHandler interface
+    procedure Handle(const Target: string; Context: TdjServerContext; Request: TdjRequest; Response:
+      TdjResponse); virtual; abstract;
   public
     (**
      * Constructor.
      *)
     constructor Create; override;
-
-    (**
-     * Start the handler.
-     *)
-    procedure DoStart; override;
-
-    (**
-     * Start the handler.
-     *)
-     procedure DoStop; override;
-
-    // IHandler interface
-
-    (**
-     * Handle a HTTP request.
-     *
-     * \param Target Request target
-     * \param Context HTTP server context
-     * \param Request HTTP request
-     * \param Response HTTP response
-     * \throws EWebComponentException if an exception occurs that interferes with the component's normal operation
-     *
-     * \sa IHandler
-     *)
-    procedure Handle(const Target: string; Context: TdjServerContext; Request: TdjRequest; Response:
-      TdjResponse); virtual; abstract;
-
   end;
 
 implementation
@@ -94,23 +75,23 @@ begin
   inherited Create;
 
   // logging -----------------------------------------------------------------
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   Logger := TdjLoggerFactory.GetLogger('dj.' + TdjAbstractHandler.ClassName);
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 
-{$IFDEF LOG_CREATE}
+  {$IFDEF LOG_CREATE}
   Trace('Created');
-{$ENDIF}
+  {$ENDIF}
 end;
 
 procedure TdjAbstractHandler.Trace(const S: string);
 begin
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   if Logger.IsTraceEnabled then
   begin
     Logger.Trace(S);
   end;
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 end;
 
 procedure TdjAbstractHandler.DoStart;

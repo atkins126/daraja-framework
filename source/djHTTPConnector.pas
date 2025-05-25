@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,7 +30,7 @@ unit djHTTPConnector;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djAbstractConnector, djHTTPServer, djInterfaces, djServerContext,
@@ -43,6 +43,8 @@ uses
   {$IFDEF FPC}{$ELSE}{$HINTS ON}{$WARNINGS ON}{$ENDIF}
 
 type
+  { TdjHTTPConnector }
+
   (**
    * HTTP connector.
    *
@@ -58,10 +60,12 @@ type
     HostAndPort: string;
 
     procedure Trace(const S: string);
-
     procedure OnCommand(AContext: TIdContext;
       ARequestInfo: TdjRequest; AResponseInfo: TdjResponse);
-
+  protected
+    // TdjLifeCycle overrides
+    procedure DoStart; override;
+    procedure DoStop; override;
   public
     (**
      * Create a HTTP connector.
@@ -69,30 +73,16 @@ type
      * The handler is a required argument. The connector will
      * call the "Handle" method for incoming requests.
      *
-     * \param Handler the request handler
+     * @param Handler the request handler
      *)
     constructor Create(const Handler: IHandler); virtual;
-
     (**
      * Destructor.
      *)
     destructor Destroy; override;
 
-    // ILifeCycle interface
-
-    (**
-     * Start the handler.
-     *)
-    procedure DoStart; override;
-
-    (**
-     * Stop the handler.
-     *)
-    procedure DoStop; override;
-
     // properties
     property HTTPServer: TdjHTTPServer read FHTTPServer;
-
   end;
 
 implementation
@@ -108,9 +98,9 @@ uses
 constructor TdjHTTPConnector.Create(const Handler: IHandler);
 begin
   // logging -----------------------------------------------------------------
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   Logger := TdjLoggerFactory.GetLogger('dj.' + TdjHTTPConnector.ClassName);
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 
   inherited Create(Handler);
 
@@ -126,9 +116,9 @@ end;
 
 destructor TdjHTTPConnector.Destroy;
 begin
-{$IFDEF LOG_DESTROY}
+  {$IFDEF LOG_DESTROY}
   Trace('Destroy');
-{$ENDIF}
+  {$ENDIF}
 
   if IsStarted then
   begin
@@ -142,12 +132,12 @@ end;
 
 procedure TdjHTTPConnector.Trace(const S: string);
 begin
-{$IFDEF DARAJA_LOGGING}
+  {$IFDEF DARAJA_LOGGING}
   if Logger.IsTraceEnabled then
   begin
     Logger.Trace(S);
   end;
-{$ENDIF DARAJA_LOGGING}
+  {$ENDIF DARAJA_LOGGING}
 end;
 
 procedure TdjHTTPConnector.DoStart;
@@ -186,18 +176,18 @@ begin
 
     Started := True;
 
-{$IFDEF DARAJA_LOGGING}
+    {$IFDEF DARAJA_LOGGING}
     Logger.Info(Format('Accepting requests at %s', [HostAndPort]));
-{$ENDIF DARAJA_LOGGING}
+    {$ENDIF DARAJA_LOGGING}
 
   except
     on E: Exception do
     begin
-{$IFDEF DARAJA_LOGGING}
+      {$IFDEF DARAJA_LOGGING}
       Logger.Info(
         Format('Could not start HTTP connector at %s', [HostAndPort]));
       Logger.Error(E.Message, E);
-{$ENDIF DARAJA_LOGGING}
+      {$ENDIF DARAJA_LOGGING}
       raise;
     end;
   end;
@@ -213,9 +203,9 @@ begin
     except
       on E: Exception do
       begin
-{$IFDEF DARAJA_LOGGING}
+        {$IFDEF DARAJA_LOGGING}
         Logger.Error(E.Message, E);
-{$ENDIF DARAJA_LOGGING}
+        {$ENDIF DARAJA_LOGGING}
       end;
     end;
   end;
@@ -253,9 +243,9 @@ begin
     end;
     on E: Exception do
     begin
-{$IFDEF DARAJA_LOGGING}
+      {$IFDEF DARAJA_LOGGING}
       Logger.Error(ClassName + '.OnCommand: ' + E.ClassName + ' ' + E.Message);
-{$ENDIF DARAJA_LOGGING}
+      {$ENDIF DARAJA_LOGGING}
     end;
   end;
 end;

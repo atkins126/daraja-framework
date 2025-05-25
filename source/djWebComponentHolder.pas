@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -30,7 +30,7 @@ unit djWebComponentHolder;
 
 interface
 
-{$i IdCompilerDefines.inc}
+// {$i IdCompilerDefines.inc}
 
 uses
   djWebComponent, djGenericHolder, djLifeCycle, djInterfaces,
@@ -41,12 +41,11 @@ uses
   Classes;
 
 type
+  { TdjWebComponentHolder }
+
   (**
    * Holds a WebComponent and configuration data.
    *)
-
-  { TdjWebComponentHolder }
-
   TdjWebComponentHolder = class(TdjGenericHolder<TdjWebComponent>)
   private
     {$IFDEF DARAJA_LOGGING}
@@ -59,12 +58,19 @@ type
     procedure Trace(const S: string);
     function GetWebComponent: TdjWebComponent;
     function GetClass: TdjWebComponentClass;
-
+  protected
+    // TdjLifeCycle overrides
+    procedure DoStart; override;
+    procedure DoStop; override;
+  public
+    // IHandler interface
+    procedure Handle(Context: TdjServerContext; Request: TdjRequest;
+      Response: TdjResponse);
   public
     (**
      * Constructor.
      *
-     * \param WebComponentClass the Web Component class
+     * @param WebComponentClass the Web Component class
      *)
     constructor Create(WebComponentClass: TdjWebComponentClass); overload;
 
@@ -81,30 +87,17 @@ type
     (**
      * Set the context.
      *
-     * \param Context the context
+     * @param Context the context
      *)
     procedure SetContext(const Context: IContext);
 
     (**
      * Set initialization parameter.
      *
-     * \param Key init parameter name
-     * \param Value init parameter value
+     * @param Key init parameter name
+     * @param Value init parameter value
      *)
     procedure SetInitParameter(const Key: string; const Value: string);
-
-    (**
-     * Start the component.
-     *)
-    procedure DoStart; override;
-
-    (**
-     * Stop the component.
-     *)
-    procedure DoStop; override;
-
-    procedure Handle(Context: TdjServerContext; {%H-}Request: TdjRequest;
-       {%H-}Response: TdjResponse);
 
     // properties
     (**
@@ -211,11 +204,9 @@ begin
         E);
       {$ENDIF DARAJA_LOGGING}
 
-      Trace('Free the Web Component  "' + Name + '"');
-      FWebComponent.Free;
-//      Self.Stop;  /Todo
+      Trace('Stop the Web Component  "' + Name + '"');
 
-      raise;
+      Self.Stop;
     end;
   end;
 end;

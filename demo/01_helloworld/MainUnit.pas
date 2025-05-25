@@ -1,7 +1,7 @@
 (*
 
     Daraja HTTP Framework
-    Copyright (C) Michael Justin
+    Copyright (c) Michael Justin
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
     GNU Affero General Public License for more details.
 
     You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
     You can be released from the requirements of the license by purchasing
@@ -35,21 +35,32 @@ procedure Demo;
 implementation
 
 uses
-  HelloWorldResource,
-  djServer, djWebAppContext;
+  djWebComponent, djServer, djWebAppContext, djTypes;
+
+type
+  THelloWorldResource = class(TdjWebComponent)
+  public
+    procedure OnGet(Request: TdjRequest; Response: TdjResponse); override;
+  end;
+
+procedure THelloWorldResource.OnGet(Request: TdjRequest; Response: TdjResponse);
+begin
+  Response.ContentText := 'Hello, World!';
+  Response.ContentType := 'text/plain';
+end;
 
 procedure Demo;
 var
   Server: TdjServer;
   Context: TdjWebAppContext;
 begin
-  Server := TdjServer.Create;
+  Server := TdjServer.Create(80);
   try
     Context := TdjWebAppContext.Create('tutorial');
-    Context.AddWebComponent(THelloWorldResource, '/hello');
+    Context.Add(THelloWorldResource, '/hello');
     Server.Add(Context);
     Server.Start;
-    WriteLn('Server is running, please open http://localhost:8080/tutorial/hello');
+    WriteLn('Server is running, please open http://127.0.0.1/tutorial/hello');
     WriteLn('Hit enter to terminate.');
     ReadLn;
   finally
